@@ -91,7 +91,7 @@ void s11d_landing_800CCE64(int index, int value)
     }
 }
 
-// Tier 3B: Initialization function
+// Tier 3B: Initialization function (ENABLED for testing)
 
 // Main initialization - resets all landing system state and stops audio stream if active
 void s11d_landing_800CCDE0(void)
@@ -120,6 +120,7 @@ void s11d_landing_800CCDE0(void)
     }
 }
 
+#if 0 /* WIP: Tier 4+ functions disabled until matching confirmed */
 // Tier 4: Main entry point / constructor
 
 // Main entry point - creates and initializes a landing zone actor
