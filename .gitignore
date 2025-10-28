@@ -42,3 +42,6 @@ research/
 .sentry-native
 obj_psx_dev/
 third_party/
+build/venv/
+
+build_here.sh
