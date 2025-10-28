@@ -40,6 +40,10 @@ typedef struct LandingWork
     int     field_908;               // 0x908 - Counter/flags
     int     field_90C;               // 0x90C - GCL option 'c' value
     int     field_910;               // 0x910 - GCL option 'e' value
+    int     field_B4;                // 0x914 - Rotation offset
+    int     field_B6;                // 0x918 - Completion flag
+    int     field_198;               // 0x91C - Event flag
+    int     field_1C0;               // 0x920 - Event parameter
 } LandingWork;
 
 // Function declarations
@@ -66,6 +70,9 @@ void          s11d_landing_800CCDE0(void);
 void          s11d_landing_800CD154(GV_ACT *actor);  // Act function
 void          s11d_landing_800CD378(GV_ACT *actor);  // Die function
 int           s11d_landing_800CD810(LandingWork *work, int arg1, int arg2);  // Init function
+int           s11d_landing_800CD424(OBJECT *object);  // Graphics helper 1
+int           s11d_landing_800CD614(OBJECT *object);  // Graphics helper 8
+void          s11d_landing_800CCEBC(void);  // State machine
 
 // Main entry point / constructor
 GV_ACT       *s11d_landing_800CDA20(int arg0, int arg1);
