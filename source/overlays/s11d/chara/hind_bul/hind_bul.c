@@ -57,7 +57,7 @@ void s11d_hind_bul_800CBA14(HindBulWork *work)
         DG_FreePrim(prim);
     }
 }
-#if 0
+#if 1
 
 // Function 3: s11d_hind_bul_800CB938 - Act function
 void s11d_hind_bul_800CB938(HindBulWork *work)
@@ -83,6 +83,8 @@ void s11d_hind_bul_800CB938(HindBulWork *work)
     }
 }
 
+#if 0
+
 // Function 4: s11d_hind_bul_800CBFD8 - Constructor
 GV_ACT *s11d_hind_bul_800CBFD8(int arg0, int arg1, int arg2, int enable)
 {
@@ -105,6 +107,10 @@ GV_ACT *s11d_hind_bul_800CBFD8(int arg0, int arg1, int arg2, int enable)
     }
     return NULL;
 }
+#endif
+
+
+#if 0
 
 // Function 5: s11d_hind_bul_800CBBA8 - Initialize bullet resources (STUB)
 int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
@@ -145,6 +151,10 @@ int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
     
     return 0;
 }
+#endif
+
+
+#if 0
 
 // Function 6: s11d_hind_bul_800CB794 - Hit detection
 int s11d_hind_bul_800CB794(HindBulWork *work)
@@ -163,6 +173,8 @@ int s11d_hind_bul_800CB794(HindBulWork *work)
     GM_SeSet2(0, 0x3F, 0x6F);
     return 1;
 }
+#endif
+
 
 // Function 7: s11d_hind_bul_800CBA5C - Line collision check (STUB)
 int s11d_hind_bul_800CBA5C(HZD_SEG *seg, HZD_SEG *seg2)
@@ -170,6 +182,8 @@ int s11d_hind_bul_800CBA5C(HZD_SEG *seg, HZD_SEG *seg2)
     // TODO: Implement full collision check logic
     return 0;
 }
+
+#if 0
 
 // Function 8: s11d_hind_bul_800CBE4C - Bullet spawner (STUB)
 int s11d_hind_bul_800CBE4C(HindBulWork *work, OBJECT *parent, int num_bullets)
@@ -197,5 +211,7 @@ int s11d_hind_bul_800CBE4C(HindBulWork *work, OBJECT *parent, int num_bullets)
 
     return 0;
 }
+#endif
+
 
 #endif /* WIP code disabled */
