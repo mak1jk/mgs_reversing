@@ -23,7 +23,7 @@ int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1);
  * Temporarily disabled to allow builds to proceed. The assembly versions are used instead.
  * TODO: Fix TARGET structure field names and missing prototypes before re-enabling.
  */
-#if 0
+#if 1
 
 // Function 1: s11d_hind_bul_800CB888 - Update primitive world matrix
 void s11d_hind_bul_800CB888(HindBulWork *work)
