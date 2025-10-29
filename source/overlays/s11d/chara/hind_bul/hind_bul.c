@@ -110,7 +110,7 @@ GV_ACT *s11d_hind_bul_800CBFD8(int arg0, int arg1, int arg2, int enable)
 #endif
 
 
-#if 0
+#if 1
 
 // Function 5: s11d_hind_bul_800CBBA8 - Initialize bullet resources (STUB)
 int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
@@ -130,13 +130,13 @@ int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
     GM_ConfigControlString(control, NULL, NULL);
 
     target = &work->target;
-    GM_SetTarget(target, TARGET_POWER, ENEMY_SIDE, s11d_hind_bul_800CBA5C);
+    GM_SetTarget(target, TARGET_POWER, ENEMY_SIDE, &s11d_800BB39C);
     GM_Target_8002DCCC(target, 7, 2, 0x10, 0, &s11d_800BB39C);
     
-    target->field_2C_vec = control->mov;
+    target->scale = control->mov;
     
     work->map = arg1;
-    work->prim = (DG_PRIM *)GV_NewMemory(0, sizeof(DG_PRIM));
+    work->prim = (DG_PRIM *)GV_AllocMemory(0, sizeof(DG_PRIM));
     
     if (!work->prim)
     {
