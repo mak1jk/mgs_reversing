@@ -149,33 +149,27 @@ void s11d_dsmoke2_800CCAB4(DSmoke2Work *work)
 // s11d_dsmoke2_800CCC60 - Init function (37 lines)
 int s11d_dsmoke2_800CCC60(DSmoke2Work *work, int where, int argc)
 {
-    int i;
-    int *gcl_ptr;
-    
+    int count = 0;
+    int *dst = (int *)&work->field_98;
+
     if (GCL_GetOption('p') == 0)
     {
         return -1;
     }
-    
-    gcl_ptr = (int *)&work->field_98;
-    i = 0;
-    
-    while (i < 3)
+
+    while (count < 3)
     {
-        if (GCL_GetParamResult() == 0)
+        unsigned char *param = GCL_GetParamResult();
+        if (param == 0)
         {
             break;
         }
-        
-        if (i == 3)
-        {
-            GCL_StrToInt((unsigned char *)gcl_ptr);
-            gcl_ptr += 2;
-            i++;
-        }
+
+        dst[count] = GCL_StrToInt(param);
+        count++;
     }
-    
-    work->field_94 = i;
+
+    work->field_94 = count;
     return 0;
 }
 
