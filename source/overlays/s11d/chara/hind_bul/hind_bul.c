@@ -41,6 +41,8 @@ void s11d_hind_bul_800CB888(HindBulWork *work)
     work->prim->world.t[1] = work->control.mov.vy;
     work->prim->world.t[2] = work->control.mov.vz;
 }
+#endif /* enable: expose CBA14 */
+
 
 // Function 2: s11d_hind_bul_800CBA14 - Die/cleanup function
 void s11d_hind_bul_800CBA14(HindBulWork *work)
@@ -55,6 +57,7 @@ void s11d_hind_bul_800CBA14(HindBulWork *work)
         DG_FreePrim(prim);
     }
 }
+#if 0
 
 // Function 3: s11d_hind_bul_800CB938 - Act function
 void s11d_hind_bul_800CB938(HindBulWork *work)
