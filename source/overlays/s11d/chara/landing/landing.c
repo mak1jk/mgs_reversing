@@ -3,20 +3,6 @@
 #include "game/game.h"
 #include "libgcl/libgcl.h"
 #include "takabe/thing.h"
-#include "chara/snake/shadow.h"
-#include "../../info/info.h"
-#include <libgte.h>
-#include "fmt_mot.h"
-
-// Game system functions
-extern int GM_StreamStatus(void);
-extern void GM_StreamPlayStop(void);
-extern void GM_SeSet2(int, int, int);
-extern void sub_8001FF2C(int, int, int);
-extern void sub_80032968(int, int, int);
-extern void sub_8005D58C(void *, int);
-extern void sub_8008BBA0(const char *, int);
-extern void sub_80037E40(void);
 
 #if 0 /* WIP: keep asm authoritative; disable C until matching */
 // Landing system global variables
@@ -182,7 +168,7 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
     char *param_p;
     char *param_d;
     int   name_code;
-    unsigned char *result;
+    int   result;
 
     // Initialize CONTROL structure (movement/collision)
     if (GM_InitControl(&work->control, arg1, arg2) < 0)
@@ -201,13 +187,13 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
     GM_ConfigControlHazard(&work->control, 0, -2, 7);
 
     // Hash and store identifier string
-    // work->name_hash = GV_StrCode("landing"); // TODO: verify field name
+    work->name_hash = GV_StrCode("landing");
 
     // Hash the model name
     name_code = GV_StrCode(param_d);
 
     // Initialize 3D object (flag 0x2D = specific render/update flags)
-    GM_InitObject(&work->object, name_code, 0x2D, 0);
+    GM_InitObject(&work->object, name_code, 0x2D);
 
     // Configure object joint/skeleton
     GM_ConfigObjectJoint(&work->object);
@@ -217,9 +203,12 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
 
     // Configure motion control with various data buffers
     // Offsets: +0x180, +0x1D0, +0x434, control, +0x698
-    // Note: This function signature needs to be verified against assembly
-    // For now, using a simplified call
-    // GM_ConfigMotionControl(&work->object, NULL, name_code, 0);
+    GM_ConfigMotionControl(&work->object,
+                          (MOTION_SEGMENT *)(work->field_A0 + 0xE0),  // +0x180
+                          (MOTION_SEGMENT *)(work->field_A0 + 0x130), // +0x1D0
+                          (MOTION_SEGMENT *)(work->field_A0 + 0x394), // +0x434
+                          &work->control,
+                          (MOTION_SEGMENT *)(work->field_A0 + 0x5F8)); // +0x698
 
     // Configure object lighting (+0x798)
     GM_ConfigObjectLight(&work->object, (MATRIX *)(work->field_A0 + 0x6F8));
@@ -229,7 +218,7 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
 
     // Optional: Get and parse GCL option 'e' (enemy/event?)
     result = GCL_GetOption('e');
-    if (result)
+    if (result != 0)
     {
         work->field_910 = GCL_StrToInt(GCL_GetParamResult());
     }
@@ -240,7 +229,7 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
 
     // Optional: Get and parse GCL option 'c' (count/config?)
     result = GCL_GetOption('c');
-    if (result)
+    if (result != 0)
     {
         work->field_90C = GCL_StrToInt(GCL_GetParamResult());
     }
@@ -251,7 +240,7 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
 
     // Optional: Get and parse GCL option 'l' (limit/level?)
     result = GCL_GetOption('l');
-    if (result)
+    if (result != 0)
     {
         work->field_904 = GCL_StrToInt(GCL_GetParamResult());
     }
@@ -272,15 +261,14 @@ int s11d_landing_800CD810(LandingWork *work, int arg1, int arg2)
     }
 
     // Create shadow for the helicopter
-    // Note: SVECTOR is not defined in PSY-Q SDK, using void* instead
-    // TODO: Fix SVECTOR type definition
-    work->shadow = NULL; // NewShadow(&work->control, &work->object, (void*)NULL);
+    work->shadow = NewShadow(/* TODO: determine parameters from assembly */);
 
     // Initialize counter/flags
     work->field_908 = 0;
 
     // Call info system (parameters: 1, 0x7530)
-    s11d_info_800CDAAC(1, 0x7530);
+    // extern void s11d_info_800CDAAC(int, int);
+    // s11d_info_800CDAAC(1, 0x7530);
 
     return 0; // Success
 }
@@ -337,6 +325,9 @@ int s11d_landing_800CD424(OBJECT *object)
     void *texture;
     int   name_hash;
     LandingWork *work;
+    extern void *DG_MakePrim(int type, int count, int unk, void *objs, void *parent);
+    extern void DG_QueuePrim(void *prim);
+    extern void *DG_GetTexture(int hash);
 
     // Get work pointer from object (object is at offset 0x9C)
     work = (LandingWork *)((char *)object - 0x9C);
@@ -437,6 +428,9 @@ int s11d_landing_800CD614(OBJECT *object)
     void *texture;
     int   name_hash;
     LandingWork *work;
+    extern void *DG_MakePrim(int type, int count, int unk, void *objs, void *parent);
+    extern void DG_QueuePrim(void *prim);
+    extern void *DG_GetTexture(int hash);
 
     // Get work pointer from object (object is at offset 0x9C)
     work = (LandingWork *)((char *)object - 0x9C);
@@ -526,6 +520,13 @@ void s11d_landing_800CD154(GV_ACT *actor)
 {
     LandingWork *work;
     int counter;
+    extern void GM_ActObject(OBJECT *object);
+    extern void GM_ActControl(CONTROL *control);
+    extern void GM_ConfigObjectRoot(OBJECT *object, CONTROL *control, SVECTOR *vec);
+    extern void DG_SetPos2(SVECTOR *src, SVECTOR *dst);
+    extern void sub_8001FF2C(int, int, int); // Unknown function
+    extern void sub_80032968(int, int, int); // Sound playback
+    extern void sub_8005D58C(void *, int);   // Unknown function
 
     // Cast to LandingWork
     work = (LandingWork *)actor;
@@ -538,14 +539,18 @@ void s11d_landing_800CD154(GV_ACT *actor)
     work->control.rot.vz = work->field_B4 + work->field_904;
 
     // Configure object transformation root
-    GM_ConfigObjectRoot(&work->object, &work->object, 0);
+    GM_ConfigObjectRoot(&work->object, &work->control, NULL);
 
     // Set position for rendering
     DG_SetPos2(&work->control.mov, (SVECTOR *)((char *)work + 0x798));
 
     // Copy data from global buffer to work structure (unaligned)
-    // Note: This section is simplified for compilation
-    // Actual assembly uses lwl/lwr/swl/swr for unaligned copy
+    {
+        int *src = (int *)0x800B77B8;
+        int *dst = (int *)((char *)work + 0);
+        // Simplified: actual code uses lwl/lwr/swl/swr for unaligned copy
+        // Copying 8 bytes
+    }
 
     // Store rotation value
     work->control.turn.vy = work->field_B4;
@@ -745,3 +750,6 @@ void s11d_landing_800CCEBC(void)
         }
     }
 }
+
+
+#endif /* WIP: landing.c disabled (wrapped) */
