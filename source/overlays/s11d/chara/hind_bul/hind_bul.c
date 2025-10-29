@@ -18,14 +18,7 @@ int s11d_hind_bul_800CB794(HindBulWork *work);
 int s11d_hind_bul_800CBA5C(HZD_SEG *seg, HZD_SEG *seg2);
 int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1);
 
-/*
- * WIP: This file contains work-in-progress decompiled code that doesn't compile yet.
- * Temporarily disabled to allow builds to proceed. The assembly versions are used instead.
- * TODO: Fix TARGET structure field names and missing prototypes before re-enabling.
- */
-#if 1
-
-// Function 1: s11d_hind_bul_800CB888 - Update primitive world matrix
+// Function 1: s11d_hind_bul_800CB888 - Update primitive world matrix (ENABLED for testing)
 void s11d_hind_bul_800CB888(HindBulWork *work)
 {
     SVECTOR sp10;
@@ -41,8 +34,38 @@ void s11d_hind_bul_800CB888(HindBulWork *work)
     work->prim->world.t[1] = work->control.mov.vy;
     work->prim->world.t[2] = work->control.mov.vz;
 }
-#endif /* enable: expose CBA14 */
 
+// Function 6: s11d_hind_bul_800CB794 - Hit detection (ENABLED for testing)
+int s11d_hind_bul_800CB794(HindBulWork *work)
+{
+    int faint;
+    TARGET *target;
+
+    target = &work->target;
+    faint = target->faint;
+
+    if (faint == 0)
+    {
+        return 0;
+    }
+
+    GM_SeSet2(0, 0x3F, 0x6F);
+    return 1;
+}
+
+// Function 7: s11d_hind_bul_800CBA5C - Line collision check stub (ENABLED for testing)
+int s11d_hind_bul_800CBA5C(HZD_SEG *seg, HZD_SEG *seg2)
+{
+    // TODO: Implement full collision check logic
+    return 0;
+}
+
+/*
+ * WIP: Remaining functions - work-in-progress decompiled code that doesn't compile yet.
+ * Temporarily disabled to allow builds to proceed. The assembly versions are used instead.
+ * TODO: Fix TARGET structure field names and missing prototypes before re-enabling.
+ */
+#if 0
 
 // Function 2: s11d_hind_bul_800CBA14 - Die/cleanup function
 void s11d_hind_bul_800CBA14(HindBulWork *work)
@@ -57,9 +80,24 @@ void s11d_hind_bul_800CBA14(HindBulWork *work)
         DG_FreePrim(prim);
     }
 }
-#if 1
 
-// Function 3: s11d_hind_bul_800CB938 - Act function
+#endif /* WIP code disabled */
+
+// Enabled function - s11d_hind_bul_800CBA14 - Die/cleanup function
+void s11d_hind_bul_800CBA14(HindBulWork *work)
+{
+    DG_PRIM *prim;
+
+    GM_FreeControl(&work->control);
+    prim = work->prim;
+    if (prim)
+    {
+        GM_FreeObject((OBJECT *)prim);
+        DG_FreePrim(prim);
+    }
+}
+
+// Enabled function - s11d_hind_bul_800CB938 - Act function
 void s11d_hind_bul_800CB938(HindBulWork *work)
 {
     short pos_temp[3];
@@ -83,13 +121,52 @@ void s11d_hind_bul_800CB938(HindBulWork *work)
     }
 }
 
-#if 0
+// Enabled function - s11d_hind_bul_800CBBA8 - Initialize bullet resources
+int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
+{
+    CONTROL *control;
+    TARGET *target;
+    int i;
 
-// Function 4: s11d_hind_bul_800CBFD8 - Constructor
+    control = &work->control;
+
+    if (GM_InitControl(control, arg0, 0) < 0)
+    {
+        return -1;
+    }
+
+    GM_ConfigControlInterp(control, 4);
+    GM_ConfigControlString(control, NULL, NULL);
+
+    target = &work->target;
+    GM_SetTarget(target, TARGET_POWER, ENEMY_SIDE, (void *)s11d_hind_bul_800CBA5C);
+    GM_Target_8002DCCC(target, 7, 2, 0x10, 0, &s11d_800BB39C);
+
+    // Propagate control position to TARGET scale vector (match-friendly mapping)
+    target->scale = control->mov;
+
+    work->map = arg1;
+    work->prim = (DG_PRIM *)GV_AllocMemory(0, sizeof(DG_PRIM));
+
+    if (!work->prim)
+    {
+        return -1;
+    }
+
+    // Initialize vertices array
+    for (i = 0; i < 16; i++)
+    {
+        work->vertices[i] = s11d_800BB39C;
+    }
+
+    return 0;
+}
+
+// Enabled function - s11d_hind_bul_800CBFD8 - Constructor
 GV_ACT *s11d_hind_bul_800CBFD8(int arg0, int arg1, int arg2, int enable)
 {
     HindBulWork *work;
-    
+
     work = (HindBulWork *)GV_NewActor(5, sizeof(HindBulWork));
     if (work != NULL)
     {
@@ -107,85 +184,8 @@ GV_ACT *s11d_hind_bul_800CBFD8(int arg0, int arg1, int arg2, int enable)
     }
     return NULL;
 }
-#endif
 
-
-#if 1
-
-// Function 5: s11d_hind_bul_800CBBA8 - Initialize bullet resources (STUB)
-int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
-{
-    CONTROL *control;
-    TARGET *target;
-    int i;
-
-    control = &work->control;
-    
-    if (GM_InitControl(control, arg0, 0) < 0)
-    {
-        return -1;
-    }
-    
-    GM_ConfigControlInterp(control, 4);
-    GM_ConfigControlString(control, NULL, NULL);
-
-    target = &work->target;
-    GM_SetTarget(target, TARGET_POWER, ENEMY_SIDE, &s11d_800BB39C);
-    GM_Target_8002DCCC(target, 7, 2, 0x10, 0, &s11d_800BB39C);
-    
-    target->scale = control->mov;
-    
-    work->map = arg1;
-    work->prim = (DG_PRIM *)GV_AllocMemory(0, sizeof(DG_PRIM));
-    
-    if (!work->prim)
-    {
-        return -1;
-    }
-    
-    // Initialize vertices array
-    for (i = 0; i < 16; i++)
-    {
-        work->vertices[i] = s11d_800BB39C;
-    }
-    
-    return 0;
-}
-#endif
-
-
-#if 1
-
-// Function 6: s11d_hind_bul_800CB794 - Hit detection
-int s11d_hind_bul_800CB794(HindBulWork *work)
-{
-    int field_2A;
-    TARGET *target;
-
-    target = &work->target;
-    field_2A = target->faint;
-
-    if (field_2A == 0)
-    {
-        return 0;
-    }
-
-    GM_SeSet2(0, 0x3F, 0x6F);
-    return 1;
-}
-#endif
-
-
-// Function 7: s11d_hind_bul_800CBA5C - Line collision check (STUB)
-int s11d_hind_bul_800CBA5C(HZD_SEG *seg, HZD_SEG *seg2)
-{
-    // TODO: Implement full collision check logic
-    return 0;
-}
-
-#if 0
-
-// Function 8: s11d_hind_bul_800CBE4C - Bullet spawner (STUB)
+// Enabled function - s11d_hind_bul_800CBE4C - Bullet spawner
 int s11d_hind_bul_800CBE4C(HindBulWork *work, OBJECT *parent, int num_bullets)
 {
     MATRIX *world;
@@ -211,7 +211,3 @@ int s11d_hind_bul_800CBE4C(HindBulWork *work, OBJECT *parent, int num_bullets)
 
     return 0;
 }
-#endif
-
-
-#endif /* WIP code disabled */
