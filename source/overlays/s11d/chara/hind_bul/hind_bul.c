@@ -154,16 +154,15 @@ int s11d_hind_bul_800CBBA8(HindBulWork *work, int arg0, int arg1)
 #endif
 
 
-#if 0
+#if 1
 
-// Function 6: s11d_hind_bul_800CB794 - Hit detection
-int s11d_hind_bul_800CB794(HindBulWork *work)
+// Function 6: s11d_hind_bul_800CB794(HindBulWork *work)
 {
     int field_2A;
     TARGET *target;
 
     target = &work->target;
-    field_2A = target->field_2A;
+    field_2A = target->faint;
 
     if (field_2A == 0)
     {
