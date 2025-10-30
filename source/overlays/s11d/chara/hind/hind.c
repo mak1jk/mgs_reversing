@@ -482,3 +482,106 @@ void s11d_hind_800CAF9C(void *a0)
         func_8001B701(base);
     }
 }
+
+// ============================================================================
+// FUNCTION 12: s11d_hind_800CA424 - Vector rotation helper (35 instructions)
+// ============================================================================
+// Pattern: Vector rotation with validation and math operations
+void s11d_hind_800CA424(void *a0)
+{
+    unsigned char *base;
+    unsigned short *src_vec;
+    unsigned char local_vec[32];
+    unsigned char flag_byte;
+    unsigned char shift_val;
+
+    base = (unsigned char *)a0;
+
+    // Load byte at offset 0x1C8
+    flag_byte = *(unsigned char *)(base + 0x1C8);
+
+    // Extract bits by right shift 2
+    shift_val = flag_byte >> 2;
+
+    // Check if extracted value >= 0x10
+    if (shift_val >= 0x10) {
+        return;  // Exit early
+    }
+
+    // Setup local vector data (stack-based)
+    src_vec = (unsigned short *)(base + 0x20);
+
+    // Copy vector bytes with specific pattern
+    // Load and copy first set of bytes from source
+    *(unsigned int *)&local_vec[0] = *(unsigned int *)src_vec;
+    *(unsigned int *)&local_vec[4] = *(unsigned int *)(src_vec + 2);
+
+    // Call vector math function 1
+    func_800B5B50(&local_vec[0]);
+
+    // Call vector math function 2
+    func_800B5BBE(&local_vec[16]);
+
+    // Store result back at offset 0x6E
+    *(unsigned short *)(base + 0x6E) = *(unsigned short *)&local_vec[16];
+}
+
+// ============================================================================
+// FUNCTION 13: s11d_hind_800CB310 - File loader (41 instructions)
+// ============================================================================
+// Pattern: File I/O with loop-based data processing
+void s11d_hind_800CB310(void *a0)
+{
+    unsigned char *base;
+    unsigned int *dest_ptr;
+    unsigned int file_result;
+    unsigned int loaded_value;
+    unsigned int flags;
+    int counter;
+    int i;
+
+    base = (unsigned char *)a0;
+
+    // Call file loader with size 0x68
+    file_result = func_8002063A(0x68);
+
+    // Check if file load failed
+    if (file_result == 0) {
+        return;
+    }
+
+    // Initialize counter for loop
+    counter = 0;
+    i = 0;
+
+    // Setup base pointer for loop processing
+    dest_ptr = (unsigned int *)(base + 0x93C);
+
+    // Loop to process loaded data (7 iterations)
+    for (i = 0; i < 7; i++) {
+        // Call file processing function
+        loaded_value = func_8002063A(0);
+
+        // Check processing result
+        if (loaded_value == 0) {
+            break;
+        }
+
+        // Check for specific value
+        if (counter != i) {
+            // Call another file function
+            func_80031A2A(file_result);
+
+            // Store result
+            *dest_ptr = loaded_value;
+            dest_ptr = (unsigned int *)((unsigned char *)dest_ptr + 4);
+        }
+
+        counter++;
+    }
+
+    // Load flags and OR with 0x10 bit
+    flags = *(unsigned int *)(base + 0x1C8);
+    flags = flags | 0x10;
+    *(unsigned int *)(base + 0x1C8) = flags;
+}
