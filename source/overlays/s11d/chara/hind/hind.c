@@ -420,10 +420,65 @@ void s11d_hind_800C9870(void *a0)
 }
 
 // ============================================================================
-// FUNCTION 10: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
+// FUNCTION 10: s11d_hind_800CAF20 - Update sequence coordinator (36 instructions)
 // ============================================================================
+// Pattern: Orchestration function - calls update functions in sequence
+void s11d_hind_800CAF20(void *a0)
+{
+    unsigned char *base;
+    short field_val;
+    short other_field;
 
+    base = (unsigned char *)a0;
+
+    // Call first update function with base+0x20
+    func_80025A7C((char *)base + 0x20);
+
+    // Load halfword at offset 0x22, load another at 0x66
+    field_val = *(short *)(base + 0x22);
+    other_field = *(short *)(base + 0x66);
+
+    // Add other_field to field_val
+    field_val = field_val + other_field;
+
+    // Call second update function
+    func_800D2E2((char *)base, field_val);
+
+    // Store result back at 0x22
+    *(short *)(base + 0x22) = field_val;
+
+    // Call third update function
+    func_80034891((char *)base);
+
+    // Call remaining update functions with base address
+    func_800329EE(base);
+    func_800329E0E(base);
+    func_800B2E9B(base);
+}
+
+// ============================================================================
+// FUNCTION 11: s11d_hind_800CAF9C - Cleanup dispatcher (25 instructions)
+// ============================================================================
+// Pattern: Cleanup and sound effect dispatcher
 void s11d_hind_800CAF9C(void *a0)
 {
-    // TODO: Decompile from s11d_hind_800CAF9C.s
+    unsigned char *base;
+    unsigned int event_flag;
+
+    base = (unsigned char *)a0;
+
+    // Call cleanup function 1
+    func_80026033((char *)base + 0x20);
+
+    // Call cleanup function 2
+    func_800D2FE((char *)base + 0x9C);
+
+    // Load dword at offset 0x924 (event/state flag)
+    event_flag = *(unsigned int *)(base + 0x924);
+
+    // If event flag is non-zero, call sound/event functions
+    if (event_flag != 0) {
+        func_8001B2B8(base);
+        func_8001B701(base);
+    }
 }
