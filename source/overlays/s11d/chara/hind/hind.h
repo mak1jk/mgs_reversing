@@ -43,4 +43,8 @@ void s11d_hind_800CABA8(void *a0);
 void s11d_hind_800C99F4(void *a0);
 void s11d_hind_800CB3A0(void *a0);
 
+// Phase 6 functions - very high complexity (final completion)
+void s11d_hind_800CA6D8(void *a0);
+void s11d_hind_800C9D60(void *a0);
+
 #endif // _HIND_H_

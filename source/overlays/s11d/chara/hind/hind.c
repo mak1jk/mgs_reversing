@@ -56,6 +56,7 @@ extern void func_8002561C(void *);          // 0x8002561C - animation controller
 extern void func_8002563C(void *, int);     // 0x8002563C - state processor
 extern void func_80025708(void *);          // 0x80025708 - animation handler
 extern void func_80025634(void *, int);     // 0x80025634 - flag setter
+extern void func_80025A7C(void *);          // 0x80025A7C - update function
 extern void func_8002096E(void *);          // 0x8002096E - sub-dispatcher
 extern void func_800CB05E(void *);          // 0x800CB05E - complex processor
 extern void func_80020AA0(void *);          // 0x80020AA0 - loop processor
@@ -70,6 +71,10 @@ extern void func_005C13(int);               // 0x005C13 - transform 3 (Phase 6, 
 extern void func_005B60(void *);            // 0x005B60 - store result (Phase 6, Function 2)
 extern void func_005B77(void *, void *);    // 0x005B77 - final transform (Phase 6, Function 2)
 extern void func_325DB(int, void *);        // 0x325DB - iterative processor (Phase 6, Function 2)
+
+// Additional Phase 6 external functions
+extern void func_024942(void);              // 0x024942 - division/normalization handler (Phase 6, Function 2)
+extern void func_03261C(void *);            // 0x03261C - state transition handler (Phase 6, Function 2)
 
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
@@ -363,7 +368,7 @@ void s11d_hind_800C99A8(void *a0)
 }
 
 // ============================================================================
-// FUNCTION 8: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
+// FUNCTION 8: s11d_hind_800CAF9C - Cleanup dispatcher
 // ============================================================================
 
 // ============================================================================
@@ -1709,5 +1714,524 @@ void s11d_hind_800CB3A0(void *a0)
 
 finalization:
     // Function epilogue
+    return;
+}
+
+// ============================================================================
+// PHASE 6 FUNCTIONS (27-28/28) - FINAL COMPLETION
+// ============================================================================
+
+// ============================================================================
+// FUNCTION 27: s11d_hind_800CA6D8 - Multi-way state processor (8.1 KB)
+// ============================================================================
+// Pattern: 4-way switch with fixed-point arithmetic, safe division, bit manipulation
+// Key characteristics:
+// - State-based dispatch (4 cases: 0, 1, 2, 3)
+// - Fixed-point division using 0x66666667 constant
+// - Global data dependencies (0x800BB39C, 0x800BBA12, 0x800BB330)
+// - Bit field operations on offset 0x1C8
+// - 2 external function calls
+void s11d_hind_800CA6D8(void *a0)
+{
+    unsigned char *base;
+    unsigned char *sp_buf;
+    short state;
+    short global_vec_x, global_vec_y;
+    short param_val;
+    short offset_1F8, offset_1FA;
+    short offset_1D0, offset_1E0;
+    short result_x, result_y;
+    short ext_result_x, ext_result_y;
+    short buf[4];
+    int div_val, div_hi;
+    int temp_int;
+    unsigned int bitfield;
+    int constraint_cmp;
+    short stored_val;
+    int temp_div;
+    short *stack_ptr;
+
+    base = (unsigned char *)a0;
+    sp_buf = base + 0x10;
+    state = *(short *)(base + 0x1CE);
+
+    switch (state) {
+        case 0:
+            /* CASE_0: Clear bit 0x08, load vector from global, setup stack, call func_006F92 */
+            bitfield = *(unsigned int *)(base + 0x1C8);
+            bitfield &= 0xFFF7;  /* Clear bit 0x08 */
+            *(unsigned int *)(base + 0x1C8) = bitfield;
+
+            /* Load 8-byte vector from global 0x800BB39C */
+            stack_ptr = (short *)(sp_buf + 3);
+            global_vec_x = *(short *)0x800BB39C;
+            global_vec_y = *(short *)0x800BB3A0;
+            *(short *)(base + 0x1D0) = global_vec_x;
+            *(short *)(base + 0x1D2) = global_vec_y;
+
+            /* Setup stack parameters */
+            param_val = 0x7530;  /* 30000 in decimal */
+            *(short *)(sp_buf + 4) = param_val;
+            *(int *)(sp_buf + 0) = 1;
+
+            /* Call external function */
+            func_006F92(base, sp_buf);
+            break;
+
+        case 1:
+            /* CASE_1: Fixed-point division with constraint checking and result storage */
+            /* Check constraint at offset 0x1FA < 0x0800 */
+            constraint_cmp = *(unsigned int *)(base + 0x1C8);
+            constraint_cmp &= 0xFFF7;
+            offset_1FA = *(short *)(base + 0x1FA);
+            offset_1FA &= 0x0FFF;
+
+            if (offset_1FA < 0x0800) {
+                offset_1F8 = *(short *)(base + 0x1F8);
+                temp_int = offset_1F8 + 0xFFA0;  /* -96 in two's complement */
+            } else {
+                offset_1FA = *(short *)(base + 0x1FA);
+                temp_int = offset_1FA + -160;  /* 0xFF60 */
+                *(short *)(base + 0x1EE) = temp_int;
+                *(short *)(base + 0x1D0) = offset_1FA;
+
+                /* Clear bit 0x40 */
+                bitfield = *(unsigned int *)(base + 0x1C8);
+                bitfield &= 0xFFBF;
+                *(unsigned int *)(base + 0x1C8) = bitfield;
+
+                /* Check bit 0x100 */
+                bitfield = *(unsigned int *)(base + 0x1C8);
+                bitfield &= 0x0100;
+                if (bitfield != 0) {
+                    /* Get values for fixed-point division */
+                    offset_1FA = *(short *)(base + 0x1E2);
+                    offset_1F8 = *(short *)(base + 0x1E0);
+                    param_val = *(short *)(base + 0x1E0);
+
+                    /* Subtract and compare */
+                    result_x = offset_1FA - offset_1F8;
+
+                    if (result_x >= 0) {
+                        offset_1FA = *(short *)(base + 0x1FA);
+                        offset_1F8 = *(short *)(base + 0x1F8);
+                        result_y = offset_1FA - offset_1F8;
+
+                        bitfield = *(unsigned int *)(base + 0x1C8);
+                        bitfield |= 0x0040;
+
+                        if (result_y < 0) {
+                            *(unsigned int *)(base + 0x1C8) = bitfield;
+                            result_y = result_y - result_x;
+                        }
+
+                        /* Fixed-point division: mult by 0x66666667, extract high */
+                        div_val = (int)(((long long)result_y * 0x66666667LL) >> 32);
+                        div_hi = div_val >> 7;
+                        result_y = div_hi >> 3;
+                        temp_div = result_y - (offset_1F8 << 6);
+
+                        /* Safe division check */
+                        if (temp_div != 0) {
+                            /* Store result */
+                            *(short *)(base + 0x1E4) = result_y;
+                        } else {
+                            /* Trap on divide by zero */
+                            __builtin_trap();
+                        }
+
+                        /* Additional check for overflow */
+                        if (temp_div == -1) {
+                            __builtin_trap();
+                        } else {
+                            stored_val = *(short *)(base + 0x1D2);
+                            *(short *)(base + 0x1D2) = result_y;
+                        }
+                        break;
+                    } else {
+                        /* Global data operations */
+                        offset_1F8 = *(short *)0x800BBA12;
+                        offset_1FA = -450;  /* 0xFE3E */
+                        *(short *)(base + 0x1D2) = offset_1FA;
+
+                        bitfield = *(unsigned int *)0x800BB330;
+                        param_val = *(short *)(base + 0x1FC);
+                        param_val &= 0x0001;
+                        *(short *)(base + 0x1D4) = param_val;
+
+                        if (param_val == 0) {
+                            bitfield = *(unsigned int *)(base + 0x1C8);
+                            bitfield &= 0x0100;
+                            if (bitfield == 0) {
+                                *(unsigned int *)(base + 0x1C8) |= 0x0040;
+
+                                offset_1D0 = *(short *)(base + 0x1D0);
+                                offset_1FA = *(short *)0x800BBA10;
+                                result_x = offset_1D0 - offset_1FA;
+
+                                if (result_x < 0) {
+                                    result_x = result_x - result_x;
+                                }
+
+                                div_val = (int)(((long long)result_x * 0x66666667LL) >> 32);
+                                *(short *)(base + 0x1E4) = 0x0040;
+                                div_hi = div_val >> 7;
+                                result_y = div_hi >> 3;
+                                stored_val = *(short *)(base + 0x1D2);
+                                result_x = result_y + stored_val;
+                                *(short *)(base + 0x1D2) = result_x;
+
+                                bitfield = *(unsigned int *)(base + 0x1C8);
+                                bitfield &= 0xFEFF;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            break;
+
+        case 2:
+            /* CASE_2: Global flag with vector handling */
+            /* Set bit 0x08 */
+            bitfield = *(unsigned int *)(base + 0x1C8);
+            bitfield |= 0x0008;
+            *(unsigned int *)(base + 0x1C8) = bitfield;
+
+            /* Load from global and process vectors */
+            temp_int = *(unsigned int *)0x800B9F4;
+
+            /* Load vector data and process */
+            global_vec_x = *(short *)0x800BBA10;
+
+            param_val = *(short *)(base + 0x0078);
+            offset_1F8 = *(short *)0x800BBA10;
+            offset_1FA = -1920;  /* 0xF830 */
+            *(short *)(sp_buf + 2) = offset_1FA;
+            offset_1D0 = *(short *)(base + 0x0064);
+            offset_1E0 = *(short *)(sp_buf + 4);
+            result_x = offset_1D0 - offset_1E0;
+
+            if (result_x < 0) {
+                offset_1E0 = *(short *)(sp_buf + 4);
+                offset_1E0 = offset_1E0 + 2400;  /* 0x0960 */
+                *(short *)(sp_buf + 4) = offset_1E0;
+            }
+            offset_1E0 = *(short *)(base + 0x0064);
+            offset_1E0 = offset_1E0 + -1920;  /* 0xF6A0 */
+
+            /* Vector store operations */
+            stored_val = *(short *)(sp_buf + 4);
+            offset_1D0 = *(short *)(base + 0x0064);
+            result_y = offset_1D0 >> 7;
+            result_x = result_y - stored_val;
+            *(short *)(sp_buf + 4) = result_x;
+
+            /* Load and store vector data */
+            ext_result_x = *(short *)(sp_buf + 3);
+            ext_result_y = *(short *)(sp_buf + 4);
+            *(short *)(base + 0x1D3) = ext_result_x;
+            *(short *)(base + 0x1D0) = ext_result_y;
+            *(short *)(base + 0x1D7) = ext_result_y;
+            *(short *)(base + 0x1D4) = ext_result_x;
+            break;
+
+        case 3:
+            /* CASE_3: Similar to case 2 but different offset */
+            offset_1FA = *(short *)0x800BBA14;
+            offset_1D0 = *(short *)(base + 0x0064);
+            result_x = offset_1FA - offset_1D0;
+
+            if (result_x < 0) {
+                offset_1E0 = *(short *)(sp_buf + 4);
+                offset_1E0 = offset_1E0 + -1920;  /* 0xF6A0 */
+                offset_1E0 = *(short *)(sp_buf + 4);
+                offset_1E0 = offset_1E0 + 2400;  /* 0x0960 */
+                *(short *)(sp_buf + 4) = offset_1E0;
+            }
+
+            param_val = *(short *)(base + 0x0064);
+            result_y = param_val >> 5;
+            result_x = (result_y & 0x07C0) >> 6;
+            stored_val = result_y >> 3;
+            result_x = result_x + stored_val;
+            stored_val = *(short *)(base + 0x1D0);
+            result_y = result_x >> 3;
+            result_x = result_y + stored_val;
+            *(short *)(base + 0x1D0) = result_x;
+            break;
+
+        default:
+            break;
+    }
+
+    /* Final call to external exit function */
+    func_022EE8(base + 0x1E28);
+}
+
+// ============================================================================
+// FUNCTION 28: s11d_hind_800C9D60 - Complex control processor (11.3 KB)
+// ============================================================================
+// Pattern: Multi-stage state machine with safe division, vector transformations
+// Key characteristics:
+// - 6+ states on field at offset 0x1E8
+// - 72-byte stack frame (6 saved registers: s0-s5)
+// - 8 external function calls with parameter dependencies
+// - Safe division pattern used 3 times (with trap handling)
+// - Unaligned vector load/store (LWL/LWR sequences)
+// - Counter management at 0x1EA, 0x958, 0x95C
+void s11d_hind_800C9D60(void *a0)
+{
+    /* Saved register equivalents */
+    unsigned char *base;           /* s2 register */
+    unsigned char *ptr_s3;         /* s3 = base + 0x093C */
+    unsigned char *ptr_s4;         /* s4 = base + 0x006C */
+    unsigned char *ptr_s5;         /* s5 = base + 0x0064 */
+    unsigned char *ptr_s0;         /* s0 - additional work pointer */
+    unsigned char *ptr_s1;         /* s1 - additional work pointer */
+
+    /* State machine variables */
+    short state;
+    short state_check;
+    short counter_1EA;
+
+    /* Division and arithmetic */
+    int global_flag;
+    int div_operand_C, div_operand_4, div_operand_10;
+    int quotient1, quotient2;
+    int temp_mult;
+    short result_val;
+    int temp_div_result;
+
+    /* Vector operations */
+    unsigned char vec_storage[32];  /* Stack storage for vectors */
+    short vec_x, vec_y;
+    short *vec_ptr;
+
+    /* Bitfield and flags */
+    int bitfield_1C8;
+
+    /* Loop variables */
+    short loop_offset;
+    short loop_count;
+    int i;
+
+    /* Temporary values */
+    short temp_short;
+    int temp_int;
+    short loaded_val;
+
+    base = (unsigned char *)a0;
+
+    /* Initialize pointer registers (from assembly prologue) */
+    ptr_s3 = base + 0x093C;  /* s3 */
+    ptr_s5 = base + 0x0064;  /* s5 */
+    ptr_s4 = base + 0x006C;  /* s4 */
+
+    /* Read state from offset 0x1E8 */
+    state = *(short *)(base + 0x1E8);
+
+    /* Early exit if state <= 0 (assembly line 19: blez) */
+    if (state <= 0) {
+        goto state_2_plus_check;
+    }
+
+    /* ===== STATE 0-1 HANDLER ===== */
+    /* Safe Division Pattern 1 (assembly lines 21-58) */
+
+    /* Load global flag */
+    global_flag = *(int *)0x800BB330;
+
+    /* Division 1: global_flag / value_at_0x000C */
+    div_operand_C = *(int *)(base + 0x000C);
+
+    /* Safe division with trap handling */
+    if (div_operand_C == 0) {
+        __builtin_trap();  /* break 7 */
+    }
+    if (div_operand_C == -1 && global_flag == (int)0x80000000) {
+        __builtin_trap();  /* break 6 */
+    }
+    quotient1 = global_flag / div_operand_C;
+
+    /* Division 2: quotient1 / 0x1000 */
+    if (0x1000 == 0) {
+        __builtin_trap();
+    }
+    quotient2 = quotient1 / 0x1000;
+
+    /* Multiply: quotient1 * quotient2 */
+    temp_mult = quotient1 * quotient2;
+
+    /* Call external function */
+    func_024942();
+
+    /* Load value from offset 0x0018 and mult with quotient2 */
+    result_val = *(short *)(base + 0x0018);
+    temp_mult = result_val * quotient2;
+
+    /* Extract result with sign extension */
+    if (temp_mult < 0) {
+        temp_mult = temp_mult + 0x0FFF;
+    }
+    result_val = temp_mult >> 12;  /* sra by 12 */
+
+    /* Store result to ptr_s3 + 0x0004 */
+    *(short *)(ptr_s3 + 0x0004) = result_val;
+
+state_2_plus_check:
+    /* Re-read state */
+    state = *(short *)(base + 0x1E8);
+
+    /* Check if state < 2 (assembly line 66: slti v0, v0, 2) */
+    state_check = (state < 2) ? 1 : 0;
+    if (state_check != 0) {
+        goto exit_function;
+    }
+
+    /* ===== STATE 2+ HANDLER ===== */
+    /* Safe Division Pattern 2 (assembly lines 68-100) */
+
+    /* Load global flag again */
+    global_flag = *(int *)0x800BB330;
+
+    /* Division 1: global_flag / value_at_0x0004 */
+    div_operand_4 = *(int *)(base + 0x0004);
+
+    /* Safe division with trap handling */
+    if (div_operand_4 == 0) {
+        __builtin_trap();
+    }
+    if (div_operand_4 == -1 && global_flag == (int)0x80000000) {
+        __builtin_trap();
+    }
+    quotient1 = global_flag / div_operand_4;
+
+    /* Division 2: quotient1 / 0x1000 */
+    quotient2 = quotient1 / 0x1000;
+
+    /* Multiply: quotient1 * quotient2 */
+    temp_mult = quotient1 * quotient2;
+
+    /* Call external function */
+    func_024942();
+
+    /* ===== Additional Multiplication Block (Assembly lines 101-115) ===== */
+    /* Load value from offset 0x0010 */
+    div_operand_10 = *(int *)(base + 0x0010);
+
+    /* Subtract from quotient2 and multiply */
+    temp_div_result = quotient2 - div_operand_10;
+    temp_mult = temp_div_result * quotient1;
+
+    /* Call func_024942 again */
+    func_024942();
+
+    /* Load from offset 0x0010, subtract quotient2, multiply */
+    loaded_val = *(short *)(base + 0x0010);
+    temp_mult = (loaded_val - quotient2) * quotient1;
+
+    /* Sign extension */
+    if (temp_mult < 0) {
+        temp_mult = temp_mult + 0x0FFF;
+    }
+    result_val = temp_mult >> 12;
+
+    /* Store result to ptr_s3 + 0x0002 */
+    *(short *)(ptr_s3 + 0x0002) = result_val;
+
+    /* ===== State Re-Check and Dispatch (Assembly lines 116-129) ===== */
+    state = *(short *)(base + 0x1E8);
+
+    /* Check if state == 1 */
+    if (state == 1) {
+        goto state_1_specific;
+    }
+
+    /* Check if state < 2 */
+    if (state < 2) {
+        goto exit_function;
+    }
+
+    /* Check if state == 2 */
+    if (state != 2) {
+        goto state_3_plus;
+    }
+
+    /* ===== Counter Check at 0x1EA (Assembly line 130) ===== */
+    counter_1EA = *(short *)(base + 0x1EA);
+    if (counter_1EA != 0) {
+        goto skip_vector_transform;
+    }
+
+    /* ===== Vector Transformation Block (Assembly lines 133-168) ===== */
+    /* Load global vector from 0x800BBA10 using unaligned pattern */
+    vec_ptr = (short *)0x800BBA10;
+    vec_x = vec_ptr[0];
+    vec_y = vec_ptr[1];
+
+    /* Store to stack */
+    *(short *)(vec_storage + 0x20) = vec_x;
+    *(short *)(vec_storage + 0x22) = vec_y;
+
+    /* Alternative: Check bit 0 of field 0x1C8 */
+    bitfield_1C8 = *(int *)(base + 0x1C8);
+    if (bitfield_1C8 & 0x0001) {
+        /* Load from stored location at 0x0910 instead */
+        vec_x = *(short *)(base + 0x0910);
+        vec_y = *(short *)(base + 0x0912);
+        *(short *)(vec_storage + 0x20) = vec_x;
+        *(short *)(vec_storage + 0x22) = vec_y;
+    }
+
+    /* ===== Five Sequential External Function Calls (Assembly lines 169-187) ===== */
+    /* Call 1: func_005B50 with stack parameters */
+    func_005B50((void *)(vec_storage + 0x20), (void *)(vec_storage + 0x18));
+
+    /* Call 2: func_005BBE */
+    func_005BBE((void *)(vec_storage + 0x10));
+
+    /* Call 3: func_005C13 with value from stack */
+    temp_short = *(short *)(vec_storage + 0x12);
+    func_005C13(temp_short);
+
+    /* Call 4: func_005B60 - store result */
+    temp_short = *(short *)(vec_storage + 0x12);
+    temp_int = temp_short + quotient2;
+    *(int *)(base + 0x0960) = temp_int;
+    func_005B60((void *)(vec_storage + 0x10));
+
+    /* Call 5: func_005B77 with offset */
+    loop_offset = *(short *)(base + 0x1F0);
+    func_005B77((void *)(vec_storage + 0x10), (void *)(ptr_s4 + 0x968));
+
+    /* ===== Counter Update (Assembly line 188) ===== */
+    *(short *)(base + 0x1EA) = 1;
+
+skip_vector_transform:
+    /* ===== Loop Offset Calculation (Assembly lines 190-198) ===== */
+    loop_offset = *(short *)(base + 0x1F0);
+    if (loop_offset < 0) {
+        loop_offset = loop_offset + 7;
+    }
+    loop_count = loop_offset >> 3;  /* Divide by 8 */
+
+    /* ===== Loop with func_325DB (Assembly line 197) ===== */
+    for (i = 0; i < loop_count; i++) {
+        func_325DB(loop_count, ptr_s5);
+    }
+
+state_1_specific:
+    /* State 1 specific handling placeholder */
+    /* (Details in Part 2) */
+    goto exit_function;
+
+state_3_plus:
+    /* State 3+ handling placeholder */
+    /* (Details in Part 2) */
+
+exit_function:
+    /* Function epilogue */
     return;
 }
