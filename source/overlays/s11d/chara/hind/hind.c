@@ -3,6 +3,10 @@
 // s11d Hind module - helicopter actor support functions
 // Extracted from MIPS assembly in asm/overlays/s11d/
 
+// External function declarations
+extern void func_800329C4(void *, int, int);
+extern int GV_Time;
+
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
 // ============================================================================
@@ -82,21 +86,58 @@ int s11d_hind_800C976C(short *a0, int a1, int a2)
 }
 
 // ============================================================================
-// FUNCTIONS 2 AND 3: Dependent on external function at 0x800329c4
+// FUNCTION 2: s11d_hind_800C9838 - Event dispatcher (53 bytes)
 // ============================================================================
-// TODO: Locate external function declaration and implement these functions
-// Stub implementations for future decompilation:
-
+// Pattern: Periodic event trigger - calls external dispatcher every 4 frames
+// when (GV_Time & 3) == 0
 void s11d_hind_800C9838(void *a0)
 {
-    // TODO: Decompile from s11d_hind_800C9838.s
-    // Requires external function at 0x800329c4
+    int gv_time;
+
+    // Load current game time
+    gv_time = GV_Time;
+
+    // Check if we're on a frame divisible by 4 (every 4 frames)
+    if ((gv_time & 3) == 0) {
+        // Trigger event: dispatch with event code 0xB6
+        func_800329C4((char *)a0 + 0x20, 0xB6, 1);
+    }
 }
 
-void s11d_hind_800C97F0(void *a0)
+// ============================================================================
+// FUNCTION 3: s11d_hind_800C97F0 - Timer with event trigger (44 bytes)
+// ============================================================================
+// Pattern: Count-down timer - decrements counter and triggers event when zero
+int s11d_hind_800C97F0(void *a0)
 {
-    // TODO: Decompile from s11d_hind_800C97F0.s
-    // Requires external function at 0x800329c4
+    unsigned char *base;
+    short timer_value;
+    int shift_result;
+
+    base = (unsigned char *)a0;
+
+    // Load timer at offset 0x978 (as halfword)
+    timer_value = *(short *)(base + 0x978);
+
+    // Check if timer is already at 0
+    if (timer_value <= 0) {
+        return 0;
+    }
+
+    // Decrement timer
+    timer_value--;
+    *(short *)(base + 0x978) = timer_value;
+
+    // Shift left by 14 bits and check if result >= 0
+    shift_result = timer_value << 14;
+    if (shift_result >= 0) {
+        return 0;
+    }
+
+    // Trigger event when timer hits 0
+    func_800329C4((char *)a0 + 0x20, 0xB6, 1);
+
+    return 0;
 }
 
 // ============================================================================

@@ -10,7 +10,7 @@
 
 void s11d_hind_800C97B8(void *a0);
 void s11d_hind_800C9838(void *a0);
-void s11d_hind_800C97F0(void *a0);
+int s11d_hind_800C97F0(void *a0);
 int s11d_hind_800C976C(short *a0, int a1, int a2);
 void s11d_hind_800C99A8(void *a0);
 void s11d_hind_800CAF9C(void *a0);
