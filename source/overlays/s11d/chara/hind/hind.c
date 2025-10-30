@@ -27,13 +27,12 @@ extern int func_800CC3EA(int);          // 0x800CC3EA - result checker
 extern void func_800CC304(void *, void *);  // 0x800CC304 - post-processor
 
 // Additional Phase 4 external functions
-extern void func_8005FBC8(void *, void *);  // 0x8005FBC8 - major processor
-extern void func_80019EBC(void *, void *);  // 0x80019EBC - memory copy processor
-extern int func_80018274(int);          // 0x80018274 - validation checker
-extern void func_8001BED0(void *);      // 0x8001BED0 - component processor 1
-extern void func_8001BE00(void *);      // 0x8001BE00 - component processor 2
-extern void func_80016CCC(void *, void *);  // 0x80016CCC - setup/initialization
-extern void func_8001D830(void *, void *);  // 0x8001D830 - main processor
+extern void NewAnime(void *, void *);  // 0x8005FBC8 - major processor (NewAnime from functions.txt mapping)
+extern void func_80019EBC(void *, void *);  // 0x80019EBC - memory copy processor (overlay-specific)
+extern int func_80018274(int);          // 0x80018274 - validation checker (DG_QueuePrim equivalent)
+extern void func_8001BED0(void *);      // 0x8001BED0 - component processor 1 (overlay-specific)
+extern void func_80016CCC(void *, void *);  // 0x80016CCC - setup/initialization (GV_StrCode equivalent)
+extern void func_8001D830(void *, void *);  // 0x8001D830 - main processor (DG_GetTexture equivalent)
 extern void func_8092D5D8(void *);      // 0x8092D5D8 - complex processor
 extern int func_8CC90A08(void *);       // 0x8CC90A08 - state transformation
 extern void func_8CC5FCD8(void *, void *);  // 0x8CC5FCD8 - complex handler
@@ -1055,7 +1054,7 @@ void s11d_hind_800C958C(void *a0)
     data_ptr = (void *)0x800C32D4;
 
     // Call major processor with data pointer and stack buffer
-    func_8005FBC8(data_ptr, (void *)stack_buf);
+    NewAnime(data_ptr, (void *)stack_buf);
 
     // Load global flag at 0x800B_B330 and check bits 0-1
     global_flag = *(int *)0x800BB330;
@@ -1090,7 +1089,7 @@ void s11d_hind_800C958C(void *a0)
         data_ptr = (void *)0x800C32F0;
 
         // Call major processor with alternate data pointer
-        func_8005FBC8(data_ptr, (void *)stack_buf);
+        NewAnime(data_ptr, (void *)stack_buf);
     }
 }
 
