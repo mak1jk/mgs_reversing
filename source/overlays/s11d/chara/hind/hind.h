@@ -39,4 +39,8 @@ void s11d_hind_800CB178(void *a0);
 void s11d_hind_800CA504(void *a0);
 void s11d_hind_800CABA8(void *a0);
 
+// Phase 5 functions - high complexity
+void s11d_hind_800C99F4(void *a0);
+void s11d_hind_800CB3A0(void *a0);
+
 #endif // _HIND_H_

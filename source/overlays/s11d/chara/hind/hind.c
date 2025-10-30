@@ -38,6 +38,38 @@ extern int func_8CC90A08(void *);       // 0x8CC90A08 - state transformation
 extern void func_8CC5FCD8(void *, void *);  // 0x8CC5FCD8 - complex handler
 extern int func_80032A1C(void *, int, int);  // 0x80032A1C - final dispatch
 extern void func_800CA6D8(void *);      // 0x800CA6D8 - initial setup processor
+extern void func_800CB178(void *);      // 0x800CB178 - state processor (Phase 5)
+extern void func_800CB310(void *);      // 0x800CB310 - complex processor (Phase 5)
+
+// Phase 5 external functions
+extern void func_0C005B50(void *, void *);  // 0x0C005B50 - transform operation
+extern void func_0C005B60(void *, void *);  // 0x0C005B60 - process step
+extern void func_0C005BBE(void *);          // 0x0C005BBE - finalize calculation
+extern int func_0C005C13(int);              // 0x0C005C13 - clamp function
+extern void func_0C005B77(void *, void *);  // 0x0C005B77 - apply rotation
+extern void func_0C0325DB(int, void *);     // 0x0C0325DB - position update
+
+// Phase 5, Function 2 external functions (s11d_hind_800CB3A0)
+extern void func_80025B9C(void *);          // 0x80025B9C - prologue setup
+extern int func_80020968(void *, void *, int, int, int);  // 0x80020968 - state dispatcher
+extern void func_8002561C(void *);          // 0x8002561C - animation controller
+extern void func_8002563C(void *, int);     // 0x8002563C - state processor
+extern void func_80025708(void *);          // 0x80025708 - animation handler
+extern void func_80025634(void *, int);     // 0x80025634 - flag setter
+extern void func_8002096E(void *);          // 0x8002096E - sub-dispatcher
+extern void func_800CB05E(void *);          // 0x800CB05E - complex processor
+extern void func_80020AA0(void *);          // 0x80020AA0 - loop processor
+extern void func_80020AA4(void);             // 0x80020AA4 - condition checker
+
+// Phase 6 external functions
+extern void func_006F92(void *, void *);    // 0x006F92 - vector transformation (Phase 6, Function 1)
+extern void func_022EE8(void *);            // 0x022EE8 - major processor (Phase 6, Function 1 exit)
+extern void func_005B50(void *, void *);    // 0x005B50 - transform 1 (Phase 6, Function 2)
+extern void func_005BBE(void *);            // 0x005BBE - transform 2 (Phase 6, Function 2)
+extern void func_005C13(int);               // 0x005C13 - transform 3 (Phase 6, Function 2)
+extern void func_005B60(void *);            // 0x005B60 - store result (Phase 6, Function 2)
+extern void func_005B77(void *, void *);    // 0x005B77 - final transform (Phase 6, Function 2)
+extern void func_325DB(int, void *);        // 0x325DB - iterative processor (Phase 6, Function 2)
 
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
@@ -1299,7 +1331,6 @@ void s11d_hind_800CABA8(void *a0)
     int mult_result;
     int mult_result2;
     int sign_bit;
-    int rounded_val;
     int calc_result1;
     int calc_result2;
     int calc_result3;
@@ -1381,4 +1412,302 @@ void s11d_hind_800CABA8(void *a0)
 
     // Store final result marker
     *(int *)(base + 0x01E0) = dispatch_result;
+}
+
+// ============================================================================
+// PHASE 5, FUNCTION 1: s11d_hind_800C99F4 - Rotation control system (164 bytes)
+// ============================================================================
+// Pattern: Complex state machine with conditional processing and boundary clamping
+// Processes rotation values with transformation, applies constraints, and updates state
+void s11d_hind_800C99F4(void *a0)
+{
+    unsigned char *base;
+    unsigned char *stack_work;
+    short val_0x23;
+    short val_0x27;
+    short buf_val1;
+    short buf_val2;
+    int control_flag;
+    int limit_16bit;
+    short short_1F0;
+    int rotation_angle;
+    int clamped_result;
+    int global_limit;
+    int compare_result;
+    short stack_buf[20];
+
+    base = (unsigned char *)a0;
+
+    // Store value to offset 0x918
+    *(int *)(base + 0x918) = 0;
+
+    // Load and copy values at offsets 0x23 and 0x27
+    val_0x23 = *(short *)(base + 0x23);
+    val_0x27 = *(short *)(base + 0x27);
+
+    stack_work = (unsigned char *)stack_buf + 0x1B;
+    *(unsigned char *)stack_work = (unsigned char)val_0x23;
+    stack_work = (unsigned char *)stack_buf + 0x18;
+    *(unsigned char *)stack_work = (unsigned char)(val_0x23 >> 8);
+
+    stack_work = (unsigned char *)stack_buf + 0x1F;
+    *(unsigned char *)stack_work = (unsigned char)val_0x27;
+    stack_work = (unsigned char *)stack_buf + 0x1C;
+    *(unsigned char *)stack_work = (unsigned char)(val_0x27 >> 8);
+
+    // Load control flags from offset 0x910
+    control_flag = *(int *)(base + 0x910);
+
+    // Check bit 0 of control flag
+    if ((control_flag & 0x1) == 0) {
+        // Clear halfwords if bit 0 is not set
+        *(short *)((unsigned char *)stack_buf + 0x22) = 0;
+        *(short *)((unsigned char *)stack_buf + 0x1A) = 0;
+    }
+
+    // Call transform operations
+    func_0C005B50((void *)((unsigned char *)stack_buf + 0x18), (void *)((unsigned char *)stack_buf + 0x10));
+    func_0C005B60((void *)((unsigned char *)stack_buf + 0x10), NULL);
+
+    // Load limit value and perform comparison
+    short_1F0 = *(short *)(base + 0x1F0);
+    limit_16bit = (int)short_1F0;
+
+    // Clamp the result to constraint range
+    if (limit_16bit < -24) {
+        clamped_result = func_0C005C13(-24);
+    } else if (limit_16bit > 24) {
+        clamped_result = func_0C005C13(24);
+    } else {
+        clamped_result = func_0C005C13(limit_16bit);
+    }
+
+    // Call finalize function
+    func_0C005BBE((void *)((unsigned char *)stack_buf + 0x10));
+
+    // Load rotation angle from stack and update field
+    rotation_angle = *(short *)((unsigned char *)stack_buf + 0x6E);
+    *(unsigned char *)(base + 0x74) = 0x0F;
+
+    buf_val1 = *(short *)((unsigned char *)stack_buf + 0x6E);
+    short_1F0 = *(short *)(base + 0x1F0);
+
+    // Update rotation with constraint
+    rotation_angle = (int)short_1F0 + (int)buf_val1;
+    *(short *)(base + 0x6E) = (short)rotation_angle;
+
+    // Call apply rotation with constraint values
+    func_0C005B77((void *)((unsigned char *)stack_buf + 0x10), (void *)((unsigned char *)stack_buf + 0x28));
+
+    // Load rotation value from 0x1F0
+    short_1F0 = *(short *)(base + 0x1F0);
+
+    // Check control flag again
+    if ((control_flag & 0x1) != 0) {
+        // Load additional values for secondary processing
+        buf_val1 = *(short *)((unsigned char *)stack_buf + 0x22);
+        buf_val2 = *(short *)(base + 0x1DA);
+
+        // Load global limit from memory
+        global_limit = *(int *)0x800BBA12;
+
+        // Compute difference
+        global_limit = global_limit + (int)buf_val1;
+        compare_result = global_limit - (int)buf_val2;
+
+        // Clamp to range [-128, 128]
+        if (compare_result < -128) {
+            clamped_result = -128;
+        } else if (compare_result > 128) {
+            clamped_result = 128;
+        } else {
+            clamped_result = compare_result;
+        }
+
+        *(short *)(base + 0x66) = (short)clamped_result;
+    } else {
+        *(short *)(base + 0x66) = *(short *)((unsigned char *)stack_buf + 0x20);
+    }
+
+    // Call position update functions
+    func_0C0325DB(100 + (int)base, (void *)((unsigned char *)stack_buf + 0x28));
+    func_0C0325DB(104 + (int)base, (void *)((unsigned char *)stack_buf + 0x2C));
+}
+
+// ============================================================================
+// PHASE 5, FUNCTION 2: s11d_hind_800CB3A0 - Character state dispatcher (364 bytes)
+// ============================================================================
+// Pattern: Complex state machine with 30+ external calls, multiple branching paths
+void s11d_hind_800CB3A0(void *a0)
+{
+    unsigned char *base;
+    unsigned char *work_ptr;
+    int dispatch_result;
+    int loop_counter;
+    int global_val;
+    unsigned int flags;
+    short halfword_val;
+    unsigned char byte_vals[8];
+
+    base = (unsigned char *)a0;
+
+    // === Prologue: Setup work area (offset 0x20) ===
+    work_ptr = base + 0x20;
+
+    // Call prologue setup function
+    func_80025B9C(work_ptr);
+
+    // === Check initial condition at offset 0x1C8 ===
+    dispatch_result = *(int *)(base + 0x1C8);
+    if (dispatch_result == -1) {
+        return;  // Early exit if flag is -1
+    }
+
+    // === State dispatch sequence ===
+    // Dispatch code 0x70
+    func_80020968(base, base, 0x70, 0, 0);
+
+    // Dispatch code 0x64
+    func_80020968(base, base, 0x64, 0, 0);
+
+    // Animation setup calls
+    func_8002561C(work_ptr);
+    func_8002563C(work_ptr, 1);
+    func_80025708(work_ptr);
+    func_80025634(work_ptr, -2);
+
+    // === Dispatch code 0x6D with result check ===
+    dispatch_result = func_80020968(base, base, 0x6D, 0, 0);
+    if (dispatch_result == 0) {
+        // Skip major processing
+        goto finalization;
+    }
+
+    // === Major processing path ===
+    func_8002096E(base + 0x9C);
+
+    func_800CB05E(base + 0x9C);
+    func_800CB178(work_ptr);
+    func_800CB310(work_ptr);
+    func_8002096E(base);
+    func_8002563C(base, 45);
+
+    // Store state marker byte at 0x59
+    *(unsigned char *)(base + 0x59) = 0x02;
+
+    // === Memory copy operations ===
+    // Load global data from 0x800BB39C and copy to base offsets
+    global_val = *(int *)0x800BB39C;
+    byte_vals[0] = *(unsigned char *)(global_val + 0x0003);
+    byte_vals[1] = *(unsigned char *)(global_val + 0x0000);
+    byte_vals[2] = *(unsigned char *)(global_val + 0x0007);
+    byte_vals[3] = *(unsigned char *)(global_val + 0x0004);
+
+    *(unsigned char *)(base + 0x1D3) = byte_vals[0];
+    *(unsigned char *)(base + 0x1D0) = byte_vals[1];
+    *(unsigned char *)(base + 0x1D7) = byte_vals[2];
+    *(unsigned char *)(base + 0x1D4) = byte_vals[3];
+
+    // Clear multiple offsets
+    *(int *)(base + 0x1C8) = 0;
+    *(int *)(base + 0x1C0) = 0;
+    *(int *)(base + 0x1C4) = 0;
+
+    *(short *)(base + 0x1EA) = 0;
+    *(short *)(base + 0x1E8) = 0;
+    *(short *)(base + 0x1EE) = 0;
+    *(short *)(base + 0x1EC) = 0;
+
+    // === Dispatch code 0x73 ===
+    dispatch_result = func_80020968(base, base, 0x73, 0, 0);
+    if (dispatch_result != 0) {
+        // Process animations if condition met
+        func_8002096E(NULL);
+        func_8002096E(base);
+        func_8002096E(base);
+        func_8002096E(base);
+    }
+
+    // === Dispatch code 0x78 ===
+    dispatch_result = func_80020968(base, base, 0x78, 0, 0);
+    if (dispatch_result != 0) {
+        // Set flag bit
+        flags = *(unsigned int *)(base + 0x1C8);
+        flags |= 0x1;
+        *(unsigned int *)(base + 0x1C8) = flags;
+    }
+
+    // === Dispatch code 0x7A ===
+    dispatch_result = func_80020968(base, base, 0x7A, 0, 0);
+    if (dispatch_result != 0) {
+        // Complex processor with offset data
+        func_8002096E(NULL);
+        func_8002096E(base);
+
+        // Load global data from 0x800C3310
+        global_val = *(int *)0x800C3310;
+        byte_vals[0] = *(unsigned char *)(global_val + 0x0003);
+        byte_vals[1] = *(unsigned char *)(global_val + 0x0000);
+        byte_vals[2] = *(unsigned char *)(global_val + 0x0007);
+        byte_vals[3] = *(unsigned char *)(global_val + 0x0004);
+
+        *(unsigned char *)(base + 0x1DB) = byte_vals[0];
+        *(unsigned char *)(base + 0x1D8) = byte_vals[1];
+        *(unsigned char *)(base + 0x1DF) = byte_vals[2];
+        *(unsigned char *)(base + 0x1DC) = byte_vals[3];
+
+        goto finalization;
+    }
+
+    // === Dispatch code 0x62 ===
+    dispatch_result = func_80020968(base, base, 0x62, 0, 0);
+    if (dispatch_result == 0) {
+        // Clear flag if dispatch failed
+        *(int *)(base + 0x0920) = -1;
+    } else {
+        // Store result to offset 0x0920
+        *(int *)(base + 0x0920) = dispatch_result;
+    }
+
+    // === Dispatch code 0x67 ===
+    dispatch_result = func_80020968(base, base, 0x67, 0, 0);
+    if (dispatch_result != 0) {
+        // Conditional sub-dispatch for 0x67
+        func_80020968(NULL, NULL, 0, 0, 0);
+        func_8002096E(base + 0x1D8);
+        goto finalization;
+    }
+
+    // === Dispatch code 0x61 ===
+    dispatch_result = func_80020968(base, base, 0x61, 0, 0);
+    if (dispatch_result != 0) {
+        // Conditional handler for 0x61
+        func_80020968(NULL, NULL, 0, 0, 0);
+        func_8002096E(base);
+        *(int *)(base + 0x091C) = dispatch_result;
+        goto finalization;
+    }
+
+    // === Dispatch code 0x79 (condition-dependent) ===
+    halfword_val = *(short *)0x800B4D9A;
+    if (halfword_val != 0) {
+        loop_counter = 0;
+
+        // Loop over items
+        if (loop_counter < 1) {
+            do {
+                func_80020AA0(base);
+                loop_counter++;
+            } while (loop_counter < 1);
+        }
+
+        func_80020AA0(NULL);
+    }
+
+    // Store final result to global
+    *(int *)0x800C330C = 0;
+
+finalization:
+    // Function epilogue
+    return;
 }
