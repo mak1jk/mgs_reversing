@@ -32,4 +32,11 @@ int s11d_hind_800CB708(void *a0, void *a1);
 void s11d_hind_800CAE6C(void *a0);
 void s11d_hind_800CAD9C(void *a0);
 
+// Phase 4 functions - medium-high complexity
+void s11d_hind_800CB054(void *a0);
+void s11d_hind_800C958C(void *a0);
+void s11d_hind_800CB178(void *a0);
+void s11d_hind_800CA504(void *a0);
+void s11d_hind_800CABA8(void *a0);
+
 #endif // _HIND_H_

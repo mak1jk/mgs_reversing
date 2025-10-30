@@ -917,3 +917,57 @@ void s11d_hind_800CAD9C(void *a0)
         }
     }
 }
+
+// ============================================================================
+// PHASE 4 FUNCTIONS - Medium-High complexity handlers
+// ============================================================================
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CB054 (1.9K)
+// ============================================================================
+void s11d_hind_800CB054(void *a0)
+{
+    unsigned char *base;
+    base = (unsigned char *)a0;
+    // Stub - analyze assembly for detailed implementation
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800C958C (2.1K)
+// ============================================================================
+void s11d_hind_800C958C(void *a0)
+{
+    unsigned char *base;
+    base = (unsigned char *)a0;
+    // Stub - analyze assembly for detailed implementation
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CB178 (2.7K)
+// ============================================================================
+void s11d_hind_800CB178(void *a0)
+{
+    unsigned char *base;
+    base = (unsigned char *)a0;
+    // Stub - analyze assembly for detailed implementation
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CA504 (3.1K)
+// ============================================================================
+void s11d_hind_800CA504(void *a0)
+{
+    unsigned char *base;
+    base = (unsigned char *)a0;
+    // Stub - analyze assembly for detailed implementation
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CABA8 (3.3K)
+// ============================================================================
+void s11d_hind_800CABA8(void *a0)
+{
+    unsigned char *base;
+    base = (unsigned char *)a0;
+    // Stub - analyze assembly for detailed implementation
+}
