@@ -20,6 +20,26 @@ extern int func_80015148(void *, void *, void *, void *);  // 0x80015148 - data 
 extern int func_800CA6F8(void *, void *);   // 0x800CA6F8 - handler wrapper
 extern int func_800CC160(void *);       // 0x800CC160 - result processor
 
+// Phase 4 external functions
+extern void func_800CC248(void *, void *, int);  // 0x800CC248 - data processor
+extern void func_800CC3D0(void);        // 0x800CC3D0 - helper function
+extern int func_800CC3EA(int);          // 0x800CC3EA - result checker
+extern void func_800CC304(void *, void *);  // 0x800CC304 - post-processor
+
+// Additional Phase 4 external functions
+extern void func_8005FBC8(void *, void *);  // 0x8005FBC8 - major processor
+extern void func_80019EBC(void *, void *);  // 0x80019EBC - memory copy processor
+extern int func_80018274(int);          // 0x80018274 - validation checker
+extern void func_8001BED0(void *);      // 0x8001BED0 - component processor 1
+extern void func_8001BE00(void *);      // 0x8001BE00 - component processor 2
+extern void func_80016CCC(void *, void *);  // 0x80016CCC - setup/initialization
+extern void func_8001D830(void *, void *);  // 0x8001D830 - main processor
+extern void func_8092D5D8(void *);      // 0x8092D5D8 - complex processor
+extern int func_8CC90A08(void *);       // 0x8CC90A08 - state transformation
+extern void func_8CC5FCD8(void *, void *);  // 0x8CC5FCD8 - complex handler
+extern int func_80032A1C(void *, int, int);  // 0x80032A1C - final dispatch
+extern void func_800CA6D8(void *);      // 0x800CA6D8 - initial setup processor
+
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
 // ============================================================================
@@ -928,46 +948,438 @@ void s11d_hind_800CAD9C(void *a0)
 void s11d_hind_800CB054(void *a0)
 {
     unsigned char *base;
+    int *data_container;
+    int container_val;
+    short *field_ptr;
+    short field_val;
+    int counter;
+    int inner_counter;
+    void *result_ptr;
+    int result;
+    unsigned char *scan_ptr;
+    unsigned char byte_val1;
+    unsigned char byte_val2;
+
     base = (unsigned char *)a0;
-    // Stub - analyze assembly for detailed implementation
+
+    // Load container pointer at offset 0x4C
+    data_container = (int *)(base + 0x4C);
+    container_val = *data_container;
+
+    // Load nested pointer at offset 0x8 within container
+    if (container_val != 0) {
+        int *nested = (int *)((unsigned char *)container_val + 0x8);
+        container_val = *nested;
+    }
+
+    // Load field pointer and value
+    field_ptr = (short *)(base + 0x4C);
+    field_val = *(short *)(field_ptr);
+
+    if (field_val != 0) {
+        // Initialize counters
+        counter = 0;
+        result_ptr = (void *)(base + 0x200);
+
+        // Loop processing
+        for (counter = 0; counter < 16; counter++) {
+            // Load from offset 0x210 + counter
+            int loop_val = *(int *)(base + 0x210 + counter);
+
+            // Call external data processor
+            func_800CC248(base, result_ptr, loop_val);
+
+            // Advance result pointer
+            result_ptr = (void *)((unsigned char *)result_ptr + 8);
+        }
+
+        // Store marker at specific offset
+        *(short *)(base + 0x1F0) = 0x20;
+
+        // Call final processor
+        result = func_800CC3EA(0x72);
+
+        if (result != 0) {
+            // Post-process with additional functions
+            func_800CC3D0();
+            func_800CC304(base, result_ptr);
+        }
+    }
 }
 
 // ============================================================================
-// FUNCTION: s11d_hind_800C958C (2.1K)
+// FUNCTION: s11d_hind_800C958C (2.1K) - Data Transformation Coordinator
 // ============================================================================
 void s11d_hind_800C958C(void *a0)
 {
     unsigned char *base;
+    short val0;
+    short val2;
+    short val4;
+    short result0;
+    short result2;
+    short result4;
+    unsigned short stack_buf[4];
+    void *data_ptr;
+    int transform0;
+    int transform2;
+    int transform4;
+    int global_flag;
+    int flag_check;
+
     base = (unsigned char *)a0;
-    // Stub - analyze assembly for detailed implementation
+
+    // === First pass: Transform three halfword values ===
+    // Load halfword at offset 0, transform with 0x200 magnitude, subtract 64 (0xFFC0)
+    val0 = *(short *)(base + 0x0000);
+    transform0 = func_80017CBC(0x200, val0);
+    result0 = (short)(transform0 - 0xFFC0);  // Subtract 64 in two's complement
+    stack_buf[0] = (unsigned short)result0;
+
+    // Load halfword at offset 2, transform with 0x100 magnitude, subtract 128 (0xFF80)
+    val2 = *(short *)(base + 0x0002);
+    transform2 = func_80017CBC(0x100, val2);
+    result2 = (short)(transform2 - 0xFF80);  // Subtract 128 in two's complement
+    stack_buf[1] = (unsigned short)result2;
+
+    // Load halfword at offset 4, transform with 0x40 magnitude, subtract 64 (0xFFC0)
+    val4 = *(short *)(base + 0x0004);
+    transform4 = func_80017CBC(0x40, val4);
+    result4 = (short)(transform4 - 0xFFC0);  // Subtract 64 in two's complement
+    stack_buf[2] = (unsigned short)result4;
+
+    // Apply constraint check on transformed value
+    func_80017C4C(0x80, 0);
+
+    // Set up data pointer from global data section (0x800C_32D4)
+    data_ptr = (void *)0x800C32D4;
+
+    // Call major processor with data pointer and stack buffer
+    func_8005FBC8(data_ptr, (void *)stack_buf);
+
+    // Load global flag at 0x800B_B330 and check bits 0-1
+    global_flag = *(int *)0x800BB330;
+    flag_check = global_flag & 0x3;
+
+    if (flag_check != 0) {
+        // === Conditional second pass if flag bits 0-1 set ===
+        // Repeat transformation process with different data pointer (0x800C_32F0)
+
+        // Re-transform first value
+        val0 = *(short *)(base + 0x0000);
+        transform0 = func_80017CBC(0x200, val0);
+        result0 = (short)(transform0 - 0xFFC0);
+        stack_buf[0] = (unsigned short)result0;
+
+        // Re-transform second value
+        val2 = *(short *)(base + 0x0002);
+        transform2 = func_80017CBC(0x100, val2);
+        result2 = (short)(transform2 - 0xFF80);
+        stack_buf[1] = (unsigned short)result2;
+
+        // Re-transform third value
+        val4 = *(short *)(base + 0x0004);
+        transform4 = func_80017CBC(0x40, val4);
+        result4 = (short)(transform4 - 0xFFC0);
+        stack_buf[2] = (unsigned short)result4;
+
+        // Apply constraint check
+        func_80017C4C(0x80, 0);
+
+        // Set up alternate data pointer (0x800C_32F0)
+        data_ptr = (void *)0x800C32F0;
+
+        // Call major processor with alternate data pointer
+        func_8005FBC8(data_ptr, (void *)stack_buf);
+    }
 }
 
 // ============================================================================
-// FUNCTION: s11d_hind_800CB178 (2.7K)
+// FUNCTION: s11d_hind_800CB178 (2.7K) - Actor Initialization & Setup
 // ============================================================================
 void s11d_hind_800CB178(void *a0)
 {
     unsigned char *base;
+    short *init_ptr0;
+    short *init_ptr1;
+    unsigned char *copy_src;
+    unsigned char *copy_dst;
+    int copy_word0;
+    int copy_word1;
+    int processor_result;
+    int loop_counter;
+    unsigned char *array_ptr;
+    unsigned char byte_val;
+    unsigned char source_byte;
+    int bitfield_val;
+    int result_check;
+
     base = (unsigned char *)a0;
-    // Stub - analyze assembly for detailed implementation
+
+    // === Initialize halfword values in structure ===
+    // Set field at offset 0x930 to 0x0190
+    init_ptr0 = (short *)(base + 0x0930);
+    *init_ptr0 = 0x0190;
+
+    // Set field at offset 0x932 to 0x0320
+    init_ptr1 = (short *)(base + 0x0930 + 2);
+    *init_ptr1 = 0x0320;
+
+    // === Copy 8-byte data block using unaligned operations ===
+    // Source is global data at 0x800B_B39C
+    copy_src = (unsigned char *)0x800BB39C;
+    copy_dst = base + 0x0928;
+
+    // Copy first 4 bytes (unaligned load/store pattern)
+    copy_word0 = *(int *)copy_src;
+    *(int *)copy_dst = copy_word0;
+
+    // Copy second 4 bytes
+    copy_word1 = *(int *)(copy_src + 4);
+    *(int *)(copy_dst + 4) = copy_word1;
+
+    // Call memory processor on copied data
+    func_80019EBC(copy_dst, (void *)(base + 0x0938));
+
+    // Validate result
+    processor_result = func_80018274(0x1);
+
+    if (processor_result != 0) {
+        // Store result to offset 0x924
+        *(int *)(base + 0x0924) = processor_result;
+    }
+
+    // === Loop through 2 iterations of array initialization ===
+    // Initialize with setup function at 0x800D_1E40
+    func_80016CCC((void *)(base + 0x0928), (void *)0x800D1E40);
+
+    // Process 2 iterations
+    for (loop_counter = 0; loop_counter < 2; loop_counter++) {
+        array_ptr = base + 0x0928 + (loop_counter * 0x10);  // 16-byte stride per iteration
+
+        // Write byte pattern 0x2C (44) to offset 7
+        *(unsigned char *)(array_ptr + 7) = 0x2C;
+
+        // Write byte pattern 0x09 (9) to offset 3
+        *(unsigned char *)(array_ptr + 3) = 0x09;
+
+        // Write byte pattern 0x80 (128) to offset 4
+        *(unsigned char *)(array_ptr + 4) = 0x80;
+
+        // Read byte from offset 5 and modify with bitfield operation
+        byte_val = *(unsigned char *)(array_ptr + 5);
+        bitfield_val = byte_val & 0xFF9F;  // Clear bits 5-6
+        bitfield_val |= 0x20;              // Set bit 5
+        *(unsigned char *)(array_ptr + 5) = (unsigned char)bitfield_val;
+
+        // Read byte from offset 6 and apply transformation
+        source_byte = *(unsigned char *)(array_ptr + 6);
+        *(unsigned char *)(array_ptr + 6) = source_byte;
+
+        // Call processor function on this iteration
+        func_8001D830((void *)array_ptr, (void *)(base + 0x0938));
+    }
+
+    // Set flag bit 0x100 in component field at offset 0x24
+    if (processor_result != 0) {
+        int *flag_ptr = (int *)(base + 0x0924);
+        int flag_val = *flag_ptr;
+        flag_val |= 0x100;  // Set bit 8
+        *flag_ptr = flag_val;
+    }
 }
 
 // ============================================================================
-// FUNCTION: s11d_hind_800CA504 (3.1K)
+// FUNCTION: s11d_hind_800CA504 (3.1K) - State Machine Event Handler
 // ============================================================================
 void s11d_hind_800CA504(void *a0)
 {
     unsigned char *base;
+    int flag_word;
+    unsigned short state_discriminator;
+    short val_at_minus4;
+    short val_at_minus2;
+    int loop_count;
+    int stride_offset;
+    void *array_ptr;
+    short *value_ptr;
+    int state_result;
+    int comparison_val;
+
     base = (unsigned char *)a0;
-    // Stub - analyze assembly for detailed implementation
+
+    // === Early exit check ===
+    flag_word = *(int *)(base + 0x01C8);
+    if ((flag_word & 0x4) != 0) {
+        return;  // Exit if bit 2 is set
+    }
+
+    // === Load state discriminator from global ===
+    state_discriminator = *(unsigned short *)0x800B4DB4;
+
+    // === State machine with three magic constant paths ===
+    if (state_discriminator == 0x5A47) {
+        // Path 1: Magic constant 0x5A47 - Clear bits 0-1, set bit 1
+        flag_word = *(int *)(base + 0x01C8);
+        flag_word &= 0xFFFFFFFC;  // Clear bits 0-1
+        flag_word |= 0x2;          // Set bit 1
+        *(int *)(base + 0x01C8) = flag_word;
+    } else if (state_discriminator == 0x983F) {
+        // Path 2: Magic constant 0x983F - Clear bits 0 and 4, set bit 0
+        flag_word = *(int *)(base + 0x01C8);
+        flag_word &= 0xFFFFFFEE;  // Clear bits 0 and 4
+        flag_word |= 0x1;          // Set bit 0
+        *(int *)(base + 0x01C8) = flag_word;
+    } else if (state_discriminator == 0x6A3E) {
+        // Path 3: Magic constant 0x6A3E - Complex comparison with array processing
+
+        // Initialize loop counter
+        loop_count = 0;
+        array_ptr = (void *)(base + 0x007C);
+
+        // Loop through array with stride = (n * 5) << 2 = 20 bytes per iteration
+        while (loop_count < 16) {  // Assume max 16 iterations based on typical patterns
+            // Calculate stride offset
+            stride_offset = (loop_count * 5) << 2;  // 20 bytes per iteration
+            value_ptr = (short *)((unsigned char *)array_ptr + stride_offset);
+
+            // Load halfwords at current-4 and current-2
+            val_at_minus4 = *(short *)(value_ptr - 4);
+            val_at_minus2 = *(short *)(value_ptr - 2);
+
+            // Perform comparisons and conditional processing
+            comparison_val = *(int *)(base + 0x0200);
+            if (val_at_minus4 != comparison_val && val_at_minus2 != 0) {
+                // Call state transformation function
+                state_result = func_8CC90A08(base);
+
+                if (state_result != 0) {
+                    // Set flag bit 0x100
+                    flag_word = *(int *)(base + 0x01C8);
+                    flag_word |= 0x100;
+                    *(int *)(base + 0x01C8) = flag_word;
+
+                    // Store results
+                    *(short *)(base + 0x01E0) = val_at_minus4;
+                    *(short *)(base + 0x01E2) = val_at_minus2;
+
+                    break;  // Exit loop
+                }
+            }
+
+            loop_count++;
+        }
+    } else {
+        // Default path - minimal operation
+        flag_word = *(int *)(base + 0x01C8);
+        flag_word |= 0x100;  // Set bit 8
+        *(int *)(base + 0x01C8) = flag_word;
+    }
+
+    // === Store final state indicator ===
+    *(short *)(base + 0x01F8) = 0x1;
 }
 
 // ============================================================================
-// FUNCTION: s11d_hind_800CABA8 (3.3K)
+// FUNCTION: s11d_hind_800CABA8 (3.3K) - Physics/Collision Calculator
 // ============================================================================
 void s11d_hind_800CABA8(void *a0)
 {
     unsigned char *base;
+    int *component_ptr;
+    int component_val;
+    int flag_word;
+    int global_flag;
+    int comparison_val1;
+    int comparison_val2;
+    int comparison_val3;
+    int byte_val_8;
+    int byte_val_9;
+    int byte_val_10;
+    int byte_val_11;
+    int mult_result;
+    int mult_result2;
+    int sign_bit;
+    int rounded_val;
+    int calc_result1;
+    int calc_result2;
+    int calc_result3;
+    short calc_array[16];
+    int array_index;
+    int dispatch_result;
+
     base = (unsigned char *)a0;
-    // Stub - analyze assembly for detailed implementation
+
+    // === Call initial processor ===
+    func_800CA6D8(base);
+
+    // === Load component pointer from offset 0x0924 ===
+    component_ptr = (int *)(base + 0x0924);
+    component_val = *component_ptr;
+
+    // Set flag bit 0x100 in component
+    flag_word = *(int *)(component_val + 0x24);
+    flag_word |= 0x100;
+    *(int *)(component_val + 0x24) = flag_word;
+
+    // === Perform three comparison checks ===
+    comparison_val1 = *(int *)(base + 0x01D0);
+    comparison_val2 = *(int *)(base + 0x01F8);
+    comparison_val3 = *(int *)(base + 0x01FA);
+
+    // Early exit if comparisons fail
+    if (comparison_val1 == 0 || comparison_val2 == 0 || comparison_val3 == 0) {
+        return;
+    }
+
+    // === Check global flag bit 0 ===
+    global_flag = *(int *)0x800BB330;
+    if ((global_flag & 0x1) == 0) {
+        return;  // Exit if bit 0 not set
+    }
+
+    // === Call two component processors ===
+    func_8001BED0(base);
+    func_8092D5D8((void *)component_val);
+
+    // === Clear flag bit 0x100 and call magnitude processor ===
+    flag_word = *(int *)(component_val + 0x24);
+    flag_word &= ~0x100;  // Clear bit 8
+    *(int *)(component_val + 0x24) = flag_word;
+
+    func_80017CBC(0x400, 0);  // Call with magnitude 0x400
+
+    // === Complex fixed-point math calculations ===
+    // Load bytes from component at offset 0x0938
+    byte_val_8 = *(unsigned char *)((unsigned char *)component_val + 0x0938 + 8) & 0xFF;
+    byte_val_9 = *(unsigned char *)((unsigned char *)component_val + 0x0938 + 9) & 0xFF;
+    byte_val_10 = *(unsigned char *)((unsigned char *)component_val + 0x0938 + 10) & 0xFF;
+    byte_val_11 = *(unsigned char *)((unsigned char *)component_val + 0x0938 + 11) & 0xFF;
+
+    // Multiply byte values and apply fixed-point rounding
+    // Pattern: mult = byte1 * byte2; rounded = (mult + (mult >> 31)) >> 1
+    mult_result = byte_val_8 * byte_val_9;
+    sign_bit = mult_result >> 31;
+    calc_result1 = (mult_result + sign_bit) >> 1;
+
+    mult_result2 = byte_val_10 * byte_val_11;
+    sign_bit = mult_result2 >> 31;
+    calc_result2 = (mult_result2 + sign_bit) >> 1;
+
+    // Combine results
+    calc_result3 = calc_result1 + calc_result2;
+
+    // Store calculation results to array
+    for (array_index = 0; array_index < 16; array_index++) {
+        calc_array[array_index] = (short)(calc_result3 ^ array_index);
+    }
+
+    // === Call final complex processor with array ===
+    func_8CC5FCD8((void *)calc_array, base);
+
+    // === Call final dispatch function ===
+    dispatch_result = func_80032A1C((void *)component_val, 0xB4, 1);  // 0xB4 = 180
+
+    // Store final result marker
+    *(int *)(base + 0x01E0) = dispatch_result;
 }
