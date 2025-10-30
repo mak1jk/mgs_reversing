@@ -362,6 +362,64 @@ void s11d_hind_800C9908(void *a0, int a1)
 }
 
 // ============================================================================
+// FUNCTION 9b: s11d_hind_800C9870 - Mode controller (43 instructions)
+// ============================================================================
+// Pattern: Multi-mode state controller with conditional field updates
+void s11d_hind_800C9870(void *a0)
+{
+    unsigned char *base;
+    unsigned int *status_ptr;
+    short status_flags;
+    short mode_val;
+    unsigned int flags;
+    short field_val;
+
+    base = (unsigned char *)a0;
+
+    // Load dword at offset 0x910
+    status_ptr = (unsigned int *)(base + 0x910);
+
+    // Load halfword at offset +6 from status dword
+    status_flags = *(short *)((unsigned char *)status_ptr + 6);
+
+    // Extract bits 0x300 and shift right 8 bits to get mode value (0-3)
+    mode_val = (status_flags & 0x300) >> 8;
+
+    // Branch based on mode value
+    if (mode_val != 3) {
+        // Not mode 3 - call external function
+        func_800329C4(a0, 0, 0);
+        return;
+    }
+
+    // Check if mode equals 1
+    if (mode_val == 1) {
+        // Load flags at offset 0x1C8 and check bit 0x2
+        flags = *(unsigned int *)(base + 0x1C8);
+
+        if ((flags & 0x2) != 0) {
+            // Load halfword from offset 0x22, store at 0x1CC
+            field_val = *(short *)(base + 0x22);
+            *(short *)(base + 0x1CC) = field_val;
+        }
+
+        // Clear byte at 0x1CE
+        *(unsigned char *)(base + 0x1CE) = 0;
+        return;
+    }
+
+    // Mode must be 2
+    if (mode_val == 2) {
+        // Store 0xFFFF at both 0x1CC and 0x1CE
+        *(unsigned int *)(base + 0x1CC) = 0xFFFFFFFF;
+        *(unsigned int *)(base + 0x1CE) = 0xFFFFFFFF;
+    }
+
+    // Store dword at offset 0x1C4 (store address as dword)
+    *(unsigned int *)(base + 0x1C4) = (unsigned int)(base + 0x1C4);
+}
+
+// ============================================================================
 // FUNCTION 10: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
 // ============================================================================
 

@@ -17,5 +17,6 @@ void s11d_hind_800CAF9C(void *a0);
 void s11d_hind_800CA49C(void *a0);
 void s11d_hind_800CAFEC(void *a0, void *a1);
 void s11d_hind_800C9908(void *a0, int a1);
+void s11d_hind_800C9870(void *a0);
 
 #endif // _HIND_H_
