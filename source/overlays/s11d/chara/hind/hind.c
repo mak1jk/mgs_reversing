@@ -302,6 +302,69 @@ void s11d_hind_800C99A8(void *a0)
 // FUNCTION 8: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
 // ============================================================================
 
+// ============================================================================
+// FUNCTION 9: s11d_hind_800C9908 - Initialization routine (45 instructions)
+// ============================================================================
+// Pattern: Complex initialization with field setup and flag configuration
+void s11d_hind_800C9908(void *a0, int a1)
+{
+    unsigned char *base;
+    short status_val;
+    short extracted_val;
+    unsigned int flags;
+    unsigned int result;
+    short field_val;
+
+    base = (unsigned char *)a0;
+
+    // Move a0 to v1 (setup base pointer)
+    // a1 is parameter passed in
+
+    // Decrement a1 by 1, store at offset 0x914
+    a1--;
+    *(short *)(base + 0x914) = (short)a1;
+
+    // Set value 1 at offset 0x916
+    *(short *)(base + 0x916) = 1;
+
+    // Add 0x210 to a1, store result at offset 0x910
+    *(unsigned int *)(base + 0x910) = (unsigned int)(a1 + 0x210);
+
+    // Load halfword from base+6, extract lower 5 bits
+    status_val = *(short *)(base + 6);
+    extracted_val = status_val & 0x1F;
+
+    // If extracted value is non-zero, store at offset 0x1F0
+    if (extracted_val != 0) {
+        *(short *)(base + 0x1F0) = extracted_val;
+    }
+
+    // Load dword at offset 0x1C8 and check bit 0x10
+    flags = *(unsigned int *)(base + 0x1C8);
+    if ((flags & 0x10) != 0) {
+        // Load halfword from offset 0x22, OR with 0x20
+        field_val = *(short *)(base + 0x22);
+        result = (unsigned int)field_val | 0x20;
+        *(unsigned int *)(base + 0x1C8) = result;
+    }
+
+    // Load dword at offset 0x1C8, AND with 0xFF7F (clear bit 7)
+    flags = *(unsigned int *)(base + 0x1C8);
+    result = flags & 0xFF7F;
+    *(unsigned int *)(base + 0x1C8) = result;
+
+    // Load halfword from offset 6, shift right 4 bits, store at offset 0x1F0
+    status_val = *(short *)(base + 6);
+    extracted_val = status_val >> 4;
+    if ((extracted_val & 0x1F) != 0) {
+        *(short *)(base + 0x1F0) = extracted_val;
+    }
+}
+
+// ============================================================================
+// FUNCTION 10: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
+// ============================================================================
+
 void s11d_hind_800CAF9C(void *a0)
 {
     // TODO: Decompile from s11d_hind_800CAF9C.s
