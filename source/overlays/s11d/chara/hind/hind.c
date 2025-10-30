@@ -14,6 +14,12 @@ extern void func_800BFC48(void *, void *);  // 0x800BFC48 - assembly/output func
 extern int func_80017C4C(int, int);     // 0x80017C4C - angle constraint checker
 extern int func_80092508(int, int);     // 0x80092508 - movement physics helper
 
+// Phase 3 external functions
+extern int func_80015CE4(int, int);     // 0x80015CE4 - parameter/state checker
+extern int func_80015148(void *, void *, void *, void *);  // 0x80015148 - data processor
+extern int func_800CA6F8(void *, void *);   // 0x800CA6F8 - handler wrapper
+extern int func_800CC160(void *);       // 0x800CC160 - result processor
+
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
 // ============================================================================
@@ -817,4 +823,97 @@ void s11d_hind_800C9C7C(void *a0)
     }
 
     *(short *)(base + 0x70) = (short)calc_result;
+}
+
+// ============================================================================
+// PHASE 3 FUNCTIONS - Entry dispatchers and state handlers
+// ============================================================================
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CB708 - Entry dispatcher with parameter checking (999 bytes)
+// ============================================================================
+int s11d_hind_800CB708(void *a0, void *a1)
+{
+    int result;
+    void *handler_ptr1;
+    void *handler_ptr2;
+    void *handler_ptr3;
+
+    // Check parameters using external checker function
+    // Parameters: 5 (state ID) and 0x097C (2428 - offset)
+    result = func_80015CE4(5, 0x097C);
+
+    // If result is 0, return 0 (exit)
+    if (result == 0) {
+        return 0;
+    }
+
+    // Set up handler function pointers
+    handler_ptr1 = (void *)0x800CAF20;   // From LUI 0x800D + offset
+    handler_ptr2 = (void *)0x800CAF9C;   // From LUI 0x800D + offset
+    handler_ptr3 = (void *)0x800D1E48;   // From LUI 0x800D + offset
+
+    // Call data processor with handlers
+    func_80015148(a0, handler_ptr1, handler_ptr2, handler_ptr3);
+
+    // Call handler wrapper with parameters
+    func_800CA6F8(a0, a1);
+
+    // Final result processor
+    result = func_800CC160(a0);
+
+    // If result is non-zero, return 1
+    if (result != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CAE6C - State maintenance handler (1.2K)
+// ============================================================================
+void s11d_hind_800CAE6C(void *a0)
+{
+    unsigned char *base;
+    int state_val;
+
+    base = (unsigned char *)a0;
+
+    // Load state field at offset 0x910
+    state_val = *(int *)(base + 0x910);
+
+    // Decrement state if non-zero
+    if (state_val > 0) {
+        state_val--;
+        *(int *)(base + 0x910) = state_val;
+    }
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800CAD9C - Counter reset handler (1.4K)
+// ============================================================================
+void s11d_hind_800CAD9C(void *a0)
+{
+    unsigned char *base;
+    short counter_val;
+    int zero_val;
+
+    base = (unsigned char *)a0;
+
+    // Load counter at offset 0x2424
+    counter_val = *(short *)(base + 0x2424);
+
+    // If counter > 0, decrement it
+    if (counter_val > 0) {
+        counter_val--;
+        *(short *)(base + 0x2424) = counter_val;
+
+        // If decremented value reaches specific condition
+        zero_val = *(int *)(base + 0x2424);
+        if (zero_val == 0) {
+            // Clear related field at 0x2426
+            *(short *)(base + 0x2426) = 0;
+        }
+    }
 }

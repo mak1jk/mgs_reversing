@@ -27,4 +27,9 @@ void s11d_hind_800C96D0(void *a0);
 void s11d_hind_800C9B94(void *a0);
 void s11d_hind_800C9C7C(void *a0);
 
+// Phase 3 functions - entry dispatchers and handlers
+int s11d_hind_800CB708(void *a0, void *a1);
+void s11d_hind_800CAE6C(void *a0);
+void s11d_hind_800CAD9C(void *a0);
+
 #endif // _HIND_H_
