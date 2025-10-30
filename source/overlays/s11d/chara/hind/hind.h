@@ -22,4 +22,9 @@ void s11d_hind_800CAF20(void *a0);
 void s11d_hind_800CA424(void *a0);
 void s11d_hind_800CB310(void *a0);
 
+// Phase 2 functions - complex vector/angle calculations
+void s11d_hind_800C96D0(void *a0);
+void s11d_hind_800C9B94(void *a0);
+void s11d_hind_800C9C7C(void *a0);
+
 #endif // _HIND_H_

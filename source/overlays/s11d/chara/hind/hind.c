@@ -7,6 +7,13 @@
 extern void func_800329C4(void *, int, int);
 extern int GV_Time;
 
+// Phase 2 external functions
+extern int func_80017CBC(int, int);    // 0x80017CBC - transformation/hash function
+extern int func_80017090(int);          // 0x80017090 - secondary transformation
+extern void func_800BFC48(void *, void *);  // 0x800BFC48 - assembly/output function
+extern int func_80017C4C(int, int);     // 0x80017C4C - angle constraint checker
+extern int func_80092508(int, int);     // 0x80092508 - movement physics helper
+
 // ============================================================================
 // FUNCTION 1: s11d_hind_800C97B8 - Field update with masking (56 bytes)
 // ============================================================================
@@ -584,4 +591,230 @@ void s11d_hind_800CB310(void *a0)
     flags = *(unsigned int *)(base + 0x1C8);
     flags = flags | 0x10;
     *(unsigned int *)(base + 0x1C8) = flags;
+}
+
+// ============================================================================
+// PHASE 2 FUNCTIONS - Complex vector/angle calculations
+// ============================================================================
+
+// ============================================================================
+// FUNCTION: s11d_hind_800C96D0 - Vector transformation/hash calculation (1103 bytes)
+// ============================================================================
+// Pattern: Loads 3 halfword values, applies transformations, assembles results
+// Calls external functions for data transformation
+void s11d_hind_800C96D0(void *a0)
+{
+    unsigned char *base;
+    unsigned short val0, val2, val4;
+    short stack_buffer[4];
+    unsigned short *result_ptr;
+    int transformed0, transformed2, transformed4;
+    int temp_result;
+    void *data_ptr;
+
+    base = (unsigned char *)a0;
+
+    // Load the three halfword values from input at offsets 0, 2, 4
+    val0 = *(unsigned short *)(base + 0);
+    val2 = *(unsigned short *)(base + 2);
+    val4 = *(unsigned short *)(base + 4);
+
+    // First transformation: call func_80017CBC with 0x800 and val0
+    transformed0 = func_80017CBC(0x800, val0);
+    stack_buffer[0] = (short)val0;  // Store original
+
+    // Second transformation: call func_80017CBC with 0x800 and val2
+    transformed2 = func_80017CBC(0x800, val2);
+    *(short *)((unsigned char *)stack_buffer + 2) = (short)val2;
+
+    // Third transformation: call func_80017CBC with 0x80 and val4
+    transformed4 = func_80017CBC(0x80, val4);
+    *(short *)((unsigned char *)stack_buffer + 4) = (short)val4;
+
+    // Secondary transformation function call
+    temp_result = func_80017090(0);
+
+    // Get data pointer - address 0x800C32F0
+    data_ptr = (void *)0x800C32F0;
+
+    // Store parameter values on stack
+    *(int *)((unsigned char *)stack_buffer + 8) = 0x0001;
+
+    // Final assembly function call
+    func_800BFC48(stack_buffer, data_ptr);
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800C9B94 - Angle adjustment controller (1597 bytes)
+// ============================================================================
+void s11d_hind_800C9B94(void *a0)
+{
+    unsigned char *base;
+    unsigned char *work_ptr;
+    short angle_field;
+    short param_field;
+    int condition_result;
+    int boundary_val;
+    int delta_val;
+    short final_angle;
+    int *angle_container;
+    int current_angle;
+    int negated;
+    short val_at_1f2;
+    int calc_val;
+    short val_at_50;
+    short val_at_964;
+
+    base = (unsigned char *)a0;
+    work_ptr = base + 32;
+
+    // Load angle field at offset 0x4E (78) and param at offset 0x0A (10)
+    angle_field = *(short *)(work_ptr + 0x4E);
+    param_field = *(short *)(work_ptr + 0x0A);
+
+    // Call external constraint function
+    condition_result = func_80017C4C(angle_field, param_field);
+
+    // Check if result is zero
+    if (condition_result != 0) {
+        // Load field at offset 0x964
+        angle_container = (int *)(base + 0x964);
+        current_angle = *angle_container;
+
+        // Boundary checking logic
+        if (current_angle >= -4) {
+            // Range check
+            if (current_angle < 5) {
+                // Update angle: clear it
+                *angle_container = 0;
+            } else {
+                // Decrement
+                *angle_container = current_angle - 4;
+            }
+        } else {
+            // Signed negative case
+            negated = -(short)angle_field;
+
+            // Load from offset 0x1F2 (498)
+            val_at_1f2 = *(short *)(work_ptr + 0x1F2);
+            calc_val = val_at_1f2 - current_angle;
+
+            // Boundary check
+            if (calc_val >= -16) {
+                if (calc_val > 17) {
+                    delta_val = calc_val + 16;
+                } else {
+                    delta_val = calc_val + negated;
+                }
+            } else {
+                delta_val = calc_val - 16;
+            }
+
+            *angle_container = delta_val;
+        }
+    }
+
+    // Final operation: read fields and combine
+    val_at_50 = *(short *)(work_ptr + 0x50);
+    val_at_964 = *(short *)(base + 0x964);
+    final_angle = val_at_50 + val_at_964;
+    *(short *)(work_ptr + 0x50) = final_angle;
+}
+
+// ============================================================================
+// FUNCTION: s11d_hind_800C9C7C - Movement physics (1571 bytes)
+// ============================================================================
+void s11d_hind_800C9C7C(void *a0)
+{
+    unsigned char *base;
+    int *global_ptr;
+    int global_val;
+    int s0, s1, s2;
+    int shifted_val, calc_result;
+    int temp_param, result;
+    short motion_field;
+    short val_at_95c;
+    short val_at_gvc;
+
+    base = (unsigned char *)a0;
+
+    // Load global variable at 0x800B0000 - 0x4CF0 = 0x800AB330
+    global_ptr = (int *)0x800AB330;
+    global_val = *global_ptr;
+
+    // Initialize s2 = a0 (base pointer)
+    s2 = (int)base;
+
+    // Check sign of global value
+    if (global_val >= 0) {
+        s0 = global_val;
+    } else {
+        s0 = global_val;
+        // Arithmetic right shift by 6 (divide by 64) with rounding
+        s0 = (global_val + 63) >> 6;
+    }
+
+    // First transformation calculation
+    // s0 = s0 - (s0 << 6)
+    s1 = s0 << 6;
+    s0 = s0 - s1;
+
+    // s2 adjustment: s2 = s0 << 6
+    s2 = s0 << 6;
+
+    // First external function call
+    temp_param = s2;
+    func_80092508(temp_param, s0);
+
+    // Second calculation
+    temp_param = s0 - 1;
+    s1 = temp_param << 7;
+    func_80092508(s1, temp_param);
+
+    // Third calculation with branching
+    s0 = s2 - s1;
+    if (s0 >= 0) {
+        // Use as-is
+        s1 = s0 >> 6;
+    } else {
+        s1 = (s0 + 7) >> 6;
+    }
+
+    // Load and process motion field at offset 0x66
+    motion_field = *(short *)(base + 0x66);
+    result = motion_field + s1;
+    func_80092508(result, s1);
+    *(short *)(base + 0x66) = (short)result;
+
+    // Fourth calculation
+    temp_param = result << 5;
+    shifted_val = temp_param << 3;
+
+    // Load field at offset 0x95C
+    val_at_95c = *(short *)(base + 0x95C);
+    calc_result = val_at_95c + shifted_val;
+
+    if (calc_result >= 0) {
+        s1 = calc_result >> 8;
+    } else {
+        s1 = (calc_result + 4095) >> 8;
+    }
+
+    func_80092508(calc_result, s1);
+    *(short *)(base + 0x6C) = (short)calc_result;
+
+    // Fifth calculation
+    temp_param = calc_result << 7;
+    shifted_val = temp_param << 0;
+
+    val_at_gvc = *(short *)(base + 0x95C);
+    calc_result = val_at_gvc + shifted_val;
+
+    if (calc_result >= 0) {
+        s1 = calc_result >> 8;
+    } else {
+        s1 = (calc_result + 4095) >> 8;
+    }
+
+    *(short *)(base + 0x70) = (short)calc_result;
 }
