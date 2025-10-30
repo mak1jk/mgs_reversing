@@ -141,20 +141,168 @@ int s11d_hind_800C97F0(void *a0)
 }
 
 // ============================================================================
-// FUNCTIONS 5-7: Remaining stub implementations
+// FUNCTION 5: s11d_hind_800CA49C - Conditional flag setter (31 instructions)
 // ============================================================================
+// Pattern: Sets/clears bit flag based on position thresholds
+void s11d_hind_800CA49C(void *a0)
+{
+    unsigned char *base;
+    short val1;
+    short val2;
+    short val3;
+    unsigned int flags;
+    unsigned int result;
 
+    base = (unsigned char *)a0;
+
+    // Load first comparison value at offset 0x24
+    val1 = *(short *)(base + 0x24);
+
+    // Check if val1 < 0xC950 (51536) - interpret as signed comparison
+    if ((unsigned short)val1 >= 0xC950U) {
+        // Condition fails - clear bit 0x80 in field at offset 0x28
+        flags = *(unsigned int *)(base + 0x28);
+        result = flags & 0xFF7F;  // Clear bit 7
+        *(unsigned int *)(base + 0x28) = result;
+        return;
+    }
+
+    // Load second comparison value at offset 0x20
+    val2 = *(short *)(base + 0x20);
+
+    // Check if val2 < 0xF061 (61537) - interpret as signed comparison
+    if ((unsigned short)val2 >= 0xF061U) {
+        // Condition fails - clear bit 0x80
+        flags = *(unsigned int *)(base + 0x28);
+        result = flags & 0xFF7F;
+        *(unsigned int *)(base + 0x28) = result;
+        return;
+    }
+
+    // Check third threshold value
+    val3 = *(short *)(base + 0x20);
+    if ((unsigned short)val3 >= 0xBB8U) {  // 3000 in decimal
+        // Condition fails - clear bit 0x80
+        flags = *(unsigned int *)(base + 0x28);
+        result = flags & 0xFF7F;
+        *(unsigned int *)(base + 0x28) = result;
+        return;
+    }
+
+    // All conditions passed - set bit 0x80 in field at offset 0x28
+    flags = *(unsigned int *)(base + 0x28);
+    result = flags | 0x80;
+    *(unsigned int *)(base + 0x28) = result;
+}
+
+// ============================================================================
+// FUNCTION 6: s11d_hind_800CAFEC - Array copy loop (31 instructions)
+// ============================================================================
+// Pattern: Memory copy operation - copies data from source to destination
+void s11d_hind_800CAFEC(void *a0, void *a1)
+{
+    unsigned short *src;
+    unsigned int *src_dword;
+    unsigned int *dest;
+    unsigned short count;
+    unsigned int dword_count;
+    int i;
+
+    src = (unsigned short *)a0;
+    dest = (unsigned int *)a1;
+
+    // Load count from first halfword of source
+    count = *src;
+    dword_count = count & 0xFFFF;
+
+    // Load dword count
+    src_dword = (unsigned int *)(src + 2);
+    dword_count = *src_dword;
+
+    // Decrement main counter
+    count--;
+
+    // Exit early if count becomes zero
+    if (count == 0) {
+        return;
+    }
+
+    // Copy loop - process 4 bytes at a time
+    src = (unsigned short *)((unsigned char *)src + 6);
+
+    for (i = 0; i < dword_count; i++) {
+        unsigned short val1, val2;
+
+        // Read two halfwords
+        val1 = *src;
+        src++;
+        val2 = *src;
+        src++;
+
+        // Write as dword
+        *dest = ((unsigned int)val1) | (((unsigned int)val2) << 16);
+        dest++;
+    }
+
+    // Copy remaining halfwords (2 bytes at a time)
+    src = (unsigned short *)((unsigned char *)src - 2);
+    count--;
+
+    // Copy final elements
+    while (count > 0) {
+        unsigned short val = *src;
+        src++;
+        *((unsigned short *)dest) = val;
+        count--;
+        dest = (unsigned int *)((unsigned char *)dest + 2);
+    }
+}
+
+// ============================================================================
+// FUNCTION 7: s11d_hind_800C99A8 - Stage progression trigger (24 instructions)
+// ============================================================================
+// Pattern: Reads status flags, triggers progression event on threshold
 void s11d_hind_800C99A8(void *a0)
 {
-    // TODO: Decompile from s11d_hind_800C99A8.s
+    unsigned char *base;
+    unsigned int *status_ptr;
+    unsigned int status;
+    short status_flags;
+    short extracted_bits;
+    short stage_counter;
+    int shifted_value;
+
+    base = (unsigned char *)a0;
+
+    // Load dword at offset 0x910
+    status_ptr = (unsigned int *)(base + 0x910);
+    status = *status_ptr;
+
+    // Load halfword at offset +6 from status dword
+    status_flags = *(short *)((unsigned char *)status_ptr + 6);
+
+    // Extract bits 0x1C00 and shift right by 10 bits
+    extracted_bits = (status_flags & 0x1C00) >> 10;
+
+    // Check if extracted value is non-zero
+    shifted_value = extracted_bits << 10;
+    if (shifted_value == 0) {
+        return;
+    }
+
+    // Load counter at offset 0x914 and increment
+    stage_counter = *(short *)(base + 0x914);
+    stage_counter++;
+
+    // Call external function with progression event
+    func_800329C4((char *)a0 + 0x20, 0xB6, 1);
 }
+
+// ============================================================================
+// FUNCTION 8: s11d_hind_800CAF9C - Cleanup dispatcher (stub)
+// ============================================================================
 
 void s11d_hind_800CAF9C(void *a0)
 {
     // TODO: Decompile from s11d_hind_800CAF9C.s
-}
-
-void s11d_hind_800CA49C(void *a0)
-{
-    // TODO: Decompile from s11d_hind_800CA49C.s
 }
